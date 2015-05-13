@@ -293,19 +293,30 @@
   </xsl:function>
 
   <xsl:function name="cascade:target-subdir" as="xs:string">
-    <xsl:param name="content" as="element(cascade:content)"/>
-    <xsl:choose>
-      <xsl:when test="$content/@ext = ('png', 'jpg')">
-        <xsl:sequence select="if ($content/@base[matches(., '_COVER$')]) then 'images/cover' else 'images'"/>
-      </xsl:when>
-      <xsl:when test="$content/@ext = 'indb.xml'">
-        <xsl:sequence select="'idml'"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:sequence select="$content/@ext"/>
-      </xsl:otherwise>
-    </xsl:choose>
+    <xsl:param name="content" as="element(transpect:content)"/>
+    <xsl:apply-templates select="$content/@ext" mode="transpect:ext-to-target-subdir"/>
   </xsl:function>
+
+  <xsl:template match="@ext" mode="cascade:ext-to-target-subdir">
+    <xsl:sequence select="string(.)"/>
+  </xsl:template>
+
+  <xsl:template match="@ext[. = ('png', 'jpg')]" mode="cascade:ext-to-target-subdir">
+    <xsl:sequence select="if (../@base[matches(., '_COVER$')]) then 'images/cover' else 'images'"/>
+  </xsl:template>
+
+  <xsl:template match="@ext[. = 'report.xhtml']" mode="cascade:ext-to-target-subdir">
+    <xsl:sequence select="'report'"/>
+  </xsl:template>
+  
+  <xsl:template match="@ext[. = 'indb.xml']" mode="cascade:ext-to-target-subdir">
+    <xsl:sequence select="'idml'"/>
+  </xsl:template>
+  
+  <xsl:template match="@ext[. = 'mobi']" mode="cascade:ext-to-target-subdir">
+    <xsl:sequence select="'epub'"/>
+  </xsl:template>
+
 
   <xsl:template match="cascade:param" mode="cascade:create-paths-doc">
     <c:param>
@@ -313,7 +324,7 @@
     </c:param>
   </xsl:template>
 
-  <xsl:variable name="cascade:clades-token-regex" select="'^([a-zA-Z][-a-zA-Z0-9]+)[=_]([-.a-zA-Z0-9~]+)$'" as="xs:string"/>
+  <xsl:variable name="transpect:clades-token-regex" select="'^([a-zA-Z][-a-zA-Z0-9]+)[=_]([-.a-zA-Z0-9~]+)$'" as="xs:string"/>
 
   <xsl:function name="cascade:parse-clades-string" as="attribute(*)*">
     <xsl:param name="input" as="xs:string?"/>
