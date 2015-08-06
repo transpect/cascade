@@ -72,7 +72,7 @@
     select="'http://customers.transpect.io/adaptions/common/'"/>
 
   <xsl:variable name="cascade:catalog" as="document-node(element(cat:catalog))" 
-    select="document('http://customers.transpect.io/adaptions/xmlcatalog/catalog.xml')"/>
+    select="document('http://customers.transpect.io/xmlcatalog/catalog.xml')"/>
 
   <xsl:variable name="cascade:single-file-content" as="element(cascade:content)">
     <!-- content-base-uri will be like: file:/path/to/idml/file.idml → file:/path/to/ --> 
@@ -104,7 +104,7 @@
         </xsl:with-param>
       </xsl:apply-templates>
     </xsl:variable>
-    <xsl:result-document href="paths/1_prequalify-matching-clades.xml">
+    <xsl:result-document href="cascade/1_prequalify-matching-clades.xml">
       <xsl:sequence select="$prequalify-matching-clades"/>
     </xsl:result-document>
     <xsl:variable name="matching-clades-candidates" as="element(cascade:clade)*"
@@ -143,7 +143,7 @@
             <xsl:with-param name="code-base-uri" select="$cascade:adaptions-path" tunnel="yes"/>
           </xsl:apply-templates>
         </xsl:variable>
-        <xsl:result-document href="paths/2_conf-filter.xml">
+        <xsl:result-document href="cascade/2_conf-filter.xml">
           <xsl:sequence select="$filter-matching-clades"/>  
         </xsl:result-document>
         <xsl:apply-templates select="$filter-matching-clades[1]" mode="cascade:create-paths-doc">
@@ -293,8 +293,8 @@
   </xsl:function>
 
   <xsl:function name="cascade:target-subdir" as="xs:string">
-    <xsl:param name="content" as="element(transpect:content)"/>
-    <xsl:apply-templates select="$content/@ext" mode="transpect:ext-to-target-subdir"/>
+    <xsl:param name="content" as="element(cascade:content)"/>
+    <xsl:apply-templates select="$content/@ext" mode="cascade:ext-to-target-subdir"/>
   </xsl:function>
 
   <xsl:template match="@ext" mode="cascade:ext-to-target-subdir">
@@ -324,7 +324,7 @@
     </c:param>
   </xsl:template>
 
-  <xsl:variable name="transpect:clades-token-regex" select="'^([a-zA-Z][-a-zA-Z0-9]+)[=_]([-.a-zA-Z0-9~]+)$'" as="xs:string"/>
+  <xsl:variable name="cascade:clades-token-regex" select="'^([a-zA-Z][-a-zA-Z0-9]+)[=_]([-.a-zA-Z0-9~]+)$'" as="xs:string"/>
 
   <xsl:function name="cascade:parse-clades-string" as="attribute(*)*">
     <xsl:param name="input" as="xs:string?"/>
