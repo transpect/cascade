@@ -13,7 +13,9 @@
   <p:option name="status-dir-uri" select="'status'"/>
   
   <p:option name="interface-language" select="'en'"/>
-  <p:option name="clades" select="''"/>
+  <p:option name="clades" select="''">
+    <p:documentation>Optional parameter that expects a space-separated list of clades. Overwrite standard behaviour of parsing file names.</p:documentation>
+  </p:option>
   <p:option name="file" required="true"/>
   <p:option name="pipeline" select="'unknown'"/>
   <p:option name="progress" select="'no'">
@@ -27,13 +29,17 @@
     to determine the svn revision of the transpect project.</p:documentation>
   </p:option>
   
-  <p:input port="conf" >
+  <p:input port="conf">
     <p:document href="http://customers.transpect.io/cascade/conf/transpect-conf.xml"/>
   </p:input>
   <p:input port="stylesheet" primary="true">
     <p:documentation>The default path calculation stylesheet. Most probably you will want to define your own stylesheet for your project.
       This stylesheet will most probably import the default stylesheet.</p:documentation>
     <p:document href="../xsl/paths.xsl"/>
+  </p:input>
+  <p:input port="params" sequence="true" primary="false">
+    <p:documentation>Additional parameters for the path calculation stylesheet can be submitted over this port.</p:documentation>
+    <p:empty/>
   </p:input>
   
   <p:output port="result" primary="true">
@@ -133,18 +139,20 @@
           <p:pipe step="paths" port="stylesheet"/>
         </p:input>
         <p:input port="parameters">
-          <p:empty/>
+          <p:pipe port="params" step="paths"/>
         </p:input>
       </p:xslt>
       <p:for-each>
         <p:iteration-source>
           <p:pipe port="secondary" step="xslt"/>
         </p:iteration-source>
+        
         <tr:store-debug>
-          <p:with-option name="pipeline-step" select="replace(base-uri(), '^.+/(paths/.+)\.xml$', '$1')"/>
+          <p:with-option name="pipeline-step" select="replace(base-uri(), '^.+/(cascade/.+)\.xml$', '$1')"/>
           <p:with-option name="active" select="$debug"/>
           <p:with-option name="base-uri" select="$debug-dir-uri"/>
         </tr:store-debug>
+        
       </p:for-each>
       <p:sink/>
     </p:group>
@@ -172,7 +180,7 @@
     </p:catch>
   </p:try>
   
-  <tr:store-debug pipeline-step="paths">
+  <tr:store-debug pipeline-step="cascade/paths">
     <p:with-option name="active" select="$debug" />
     <p:with-option name="base-uri" select="$debug-dir-uri" />
   </tr:store-debug>
