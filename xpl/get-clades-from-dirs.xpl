@@ -15,9 +15,15 @@
     </p:documentation>
   </p:input>
   
-  <p:output port="result">
+  <p:output port="result" primary="true">
     <p:documentation xmlns="http://www.w3.org/1999/xhtml">
       <p>The clades document</p>
+    </p:documentation>
+  </p:output>
+  
+  <p:output port="directory-param-sets" primary="false">
+    <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+      <p>Listing of directories including expanded parameter-sets.</p>
     </p:documentation>
   </p:output>
   
@@ -43,11 +49,6 @@
     <p:with-option name="status-dir-uri" select="$status-dir-uri"/>
   </tr:simple-progress-msg>
   
-  <tr:store-debug pipeline-step="cascade/directory-list">
-    <p:with-option name="active" select="$debug"/>
-    <p:with-option name="base-uri" select="$debug-dir-uri"/>
-  </tr:store-debug>
-  
   <!--  *
         * the locaction of the parameter document is the initial point of the cascade.
         * -->
@@ -57,7 +58,7 @@
     <p:with-option name="exclude-filter" select="/c:param-set/c:param[@name eq 'exclude-filter']/@value"/>
   </cascade:directory-loop>
   
-  <tr:store-debug pipeline-step="cascade/directory-list-including-params">
+  <tr:store-debug pipeline-step="cascade/dirs-and-params">
     <p:with-option name="active" select="$debug"/>
     <p:with-option name="base-uri" select="$debug-dir-uri"/>
   </tr:store-debug>
@@ -70,5 +71,10 @@
       <p:pipe port="params" step="get-clades-from-dirs"/>
     </p:input>
   </p:xslt>
+  
+  <tr:store-debug pipeline-step="cascade/clades-from-dirs">
+    <p:with-option name="active" select="$debug"/>
+    <p:with-option name="base-uri" select="$debug-dir-uri"/>
+  </tr:store-debug>
   
 </p:declare-step>
