@@ -66,13 +66,13 @@
   <xsl:output indent="yes"/>
 
   <xsl:variable name="cascade:adaptions-path" as="xs:string" 
-    select="'http://customers.transpect.io/adaptions/'"/>
+    select="'http://transpect.io/adaptions/'"/>
   
   <xsl:variable name="cascade:common-path" as="xs:string" 
-    select="'http://customers.transpect.io/adaptions/common/'"/>
+    select="'http://transpect.io/adaptions/common/'"/>
 
   <xsl:variable name="cascade:catalog" as="document-node(element(cat:catalog))" 
-    select="document('http://customers.transpect.io/xmlcatalog/catalog.xml')"/>
+    select="document('http://transpect.io/xmlcatalog/catalog.xml')"/>
 
   <xsl:variable name="cascade:single-file-content" as="element(cascade:content)">
     <!-- content-base-uri will be like: file:/path/to/idml/file.idml → file:/path/to/ --> 

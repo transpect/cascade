@@ -30,7 +30,7 @@
   </p:option>
   
   <p:input port="conf">
-    <p:document href="http://customers.transpect.io/cascade/conf/transpect-conf.xml"/>
+    <p:document href="http://transpect.io/conf/transpect-conf.xml"/>
   </p:input>
   <p:input port="stylesheet" primary="true">
     <p:documentation>The default path calculation stylesheet. Most probably you will want to define your own stylesheet for your project.

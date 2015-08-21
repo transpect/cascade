@@ -22,6 +22,7 @@
   <xsl:param name="fallback" as="xs:string"/>
   <xsl:param name="set-xml-base-attribute" select="'yes'" as="xs:string"/>
   <xsl:param name="binary-resultpath-with-file-prefix" select="'no'" as="xs:string"/>
+  <xsl:param name="debug" select="'no'" as="xs:string"/>
   
   <!-- variables-->
 
