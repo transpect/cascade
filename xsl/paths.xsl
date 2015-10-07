@@ -4,9 +4,8 @@
   xmlns:c="http://www.w3.org/ns/xproc-step" 
   xmlns:cat="urn:oasis:names:tc:entity:xmlns:xml:catalog"
   xmlns:tr="http://transpect.io" 
-  xmlns:cascade="http://transpect.io/cascade"
   version="2.0"
-  exclude-result-prefixes="xs cascade cat tr">
+  exclude-result-prefixes="xs cat tr">
 
   <xsl:import href="http://transpect.io/xslt-util/xslt-based-catalog-resolver/xsl/resolve-uri-by-catalog.xsl"/>
   <xsl:import href="http://transpect.io/xslt-util/resolve-uri/xsl/resolve-uri.xsl"/>
@@ -34,10 +33,10 @@
     
     The primary customization points are the functions
     
-    cascade:parse-file-name(): Implements your naming conventions. It typically emits
+    tr:parse-file-name(): Implements your naming conventions. It typically emits
       attributes like publisher="acme", series="LNAS", work="4168", but also for the sake
       of convenience for other functions, ext="idml" (example), the input file extension(s).
-    cascade:target-subdir(): Maps file extensions to the subdirs below the content dir
+    tr:target-subdir(): Maps file extensions to the subdirs below the content dir
       where they will be stored in the content repo (e.g., 'png' → 'images')
     
     As a second input document, the result of calling svn info -\-xml may be supplied.
@@ -65,64 +64,67 @@
 
   <xsl:output indent="yes"/>
 
-  <xsl:variable name="cascade:adaptions-path" as="xs:string" 
+  <xsl:variable name="tr:adaptions-path" as="xs:string" 
     select="'http://transpect.io/adaptions/'"/>
   
-  <xsl:variable name="cascade:common-path" as="xs:string" 
-    select="'http://transpect.io/adaptions/common/'"/>
+  <xsl:variable name="tr:common-path" as="xs:string" 
+    select="'http://this.transpect.io/a9s/common/'"/>
 
-  <xsl:variable name="cascade:catalog" as="document-node(element(cat:catalog))" 
-    select="document('http://transpect.io/xmlcatalog/catalog.xml')"/>
+  <xsl:variable name="tr:catalog" as="document-node(element(cat:catalog))" 
+    select="document('http://this.transpect.io/xmlcatalog/catalog.xml')"/>
 
-  <xsl:variable name="cascade:single-file-content" as="element(cascade:content)">
+  <xsl:variable name="tr:single-file-content" as="element(tr:content)">
     <!-- content-base-uri will be like: file:/path/to/idml/file.idml → file:/path/to/ --> 
-    <content xmlns="http://transpect.io/cascade" content-base-uri="{replace($file, '^((.+/)([^/]+/))?.+$', '$2')}" role="work"
-      name-regex="\.+" name="{replace($file, '^(.+/)?([^.]+)(\..+)?$', '$2')}" base="{cascade:basename($file)}"
-      ext="{cascade:ext($file)}" stack-pos="1"/>
+    <content xmlns="http://transpect.io" content-base-uri="{replace($file, '^((.+/)([^/]+/))?.+$', '$2')}" role="work"
+      name-regex="\.+" name="{replace($file, '^(.+/)?([^.]+)(\..+)?$', '$2')}" base="{tr:basename($file)}"
+      ext="{tr:ext($file)}" stack-pos="1"/>
   </xsl:variable>
   
-  <xsl:template match="* | @*" mode="cascade:prequalify-matching-clades cascade:conf-filter">
+  <xsl:variable name="parse-clades-string" as="attribute(*)*" select="tr:parse-clades-string($clades)"/>
+  <xsl:variable name="parse-file-name" as="attribute(*)*" select="tr:parse-file-name($file)"/>
+  <xsl:variable name="all-atts" as="attribute(*)*" 
+    select="$parse-clades-string,
+            $parse-file-name[not(name() = $parse-clades-string/name())]" />
+
+  <xsl:template match="* | @*" mode="tr:prequalify-matching-clades tr:conf-filter">
     <xsl:copy>
       <xsl:apply-templates select="@*, *" mode="#current"/>
     </xsl:copy>
   </xsl:template>
 
   <xsl:template match="/">
-    <xsl:variable name="prequalify-matching-clades" as="element(cascade:conf)">
-      <xsl:variable name="parse-clades-string" as="attribute(*)*" select="cascade:parse-clades-string($clades)"/>
-      <xsl:variable name="parse-file-name" as="attribute(*)*" select="cascade:parse-file-name($file)"/>
-      <xsl:if test="$parse-file-name[name() = 'base'][matches(., '^file:')]">
-        <xsl:message select="'WARNING: ', string($parse-file-name[name() = 'base']), ' is not a base name, but a full uri. Please check your cascade:parse-file-name() override.'"/>
-      </xsl:if>
-      <xsl:apply-templates select="/" mode="cascade:prequalify-matching-clades">
+    <xsl:if test="$parse-file-name[name() = 'base'][matches(., '^file:')]">
+      <xsl:message select="'WARNING: ', string($parse-file-name[name() = 'base']), ' is not a base name, but a full uri. Please check your tr:parse-file-name() override.'"/>
+    </xsl:if>
+    <xsl:variable name="prequalify-matching-clades" as="element(tr:conf)">
+      <xsl:apply-templates select="/" mode="tr:prequalify-matching-clades">
         <xsl:with-param name="clade-name-value-pairs" as="attribute(*)*" tunnel="yes">
           <!-- If a parameter exists in the clades string, it has precedence over a parameter with the same name
           that is derived from the file name. Please note that the <em>role</em> of a clade will translate to the 
           <em>name()</em> of an attribute, while the attribute value corresponds to the name of a clade. -->
-          <xsl:sequence select="$parse-clades-string,
-                                $parse-file-name[not(name() = $parse-clades-string/name())]" />
+          <xsl:sequence select="$all-atts"/>
         </xsl:with-param>
       </xsl:apply-templates>
     </xsl:variable>
     <xsl:result-document href="cascade/1_prequalify-matching-clades.xml">
       <xsl:sequence select="$prequalify-matching-clades"/>
     </xsl:result-document>
-    <xsl:variable name="matching-clades-candidates" as="element(cascade:clade)*"
-      select="$prequalify-matching-clades//cascade:clade[@name]
-                                                          [cascade:content[@matches = 'maybe']]
-                                                          [every $a in ancestor-or-self::cascade:clade[@name] satisfies ($a/@matches = 'maybe')]
-                                                          [some $d in descendant::cascade:content[every $a in (ancestor::cascade:clade intersect current())
+    <xsl:variable name="matching-clades-candidates" as="element(tr:clade)*"
+      select="$prequalify-matching-clades//tr:clade[@name]
+                                                          [tr:content[@matches = 'maybe']]
+                                                          [every $a in ancestor-or-self::tr:clade[@name] satisfies ($a/@matches = 'maybe')]
+                                                          [some $d in descendant::tr:content[every $a in (ancestor::tr:clade intersect current())
                                                                                                     satisfies $a/@matches = 'maybe']
                                                            satisfies ($d/@matches = 'maybe')]"/>
     <!-- This will select only the most specifically matching candidates: -->
-    <xsl:variable name="almost-matching-clades" as="element(cascade:clade)*"
-      select="$matching-clades-candidates[empty(descendant::cascade:clade intersect $matching-clades-candidates)]"/>
+    <xsl:variable name="almost-matching-clades" as="element(tr:clade)*"
+      select="$matching-clades-candidates[empty(descendant::tr:clade intersect $matching-clades-candidates)]"/>
     <!-- The remaining clades may be pl=Psy/pl=PsyLB/ext=docx and pl=Psy/ext=docx. We’ll pick the most deeply nested. -->
-    <xsl:variable name="matching-clades" as="element(cascade:clade)*"
+    <xsl:variable name="matching-clades" as="element(tr:clade)*"
       select="$almost-matching-clades[count(ancestor::*) = max(for $a in $almost-matching-clades return count($a/ancestor::*))]"/>
     <xsl:choose>
       <xsl:when test="count($matching-clades) = 0 and $file">
-        <xsl:apply-templates mode="cascade:create-paths-doc" select="$cascade:single-file-content">
+        <xsl:apply-templates mode="tr:create-paths-doc" select="$tr:single-file-content">
           <xsl:with-param name="matching-clades" select="$matching-clades" tunnel="yes"/>
         </xsl:apply-templates>
       </xsl:when>
@@ -132,29 +134,48 @@
       <xsl:otherwise>
         <xsl:if test="count($matching-clades) gt 1">
           <xsl:message select="'Multiple configuration items matched: ', 
-                                for $m in $matching-clades return concat(string-join($m/ancestor-or-self::cascade:clade/@name, '/'), ' '), ' Processing the first one.'"/>
+                                for $m in $matching-clades return concat(string-join($m/ancestor-or-self::tr:clade/@name, '/'), ' '), ' Processing the first one.'"/>
         </xsl:if>
-        <xsl:variable name="filter-matching-clades" as="element(cascade:clade)*">
-          <xsl:apply-templates select="$matching-clades[1]/ancestor-or-self::cascade:clade[last()]" mode="cascade:conf-filter">
+        <xsl:variable name="filter-matching-clades" as="element(tr:clade)*">
+          <xsl:apply-templates select="$matching-clades[1]/ancestor-or-self::tr:clade[last()]" mode="tr:conf-filter">
             <xsl:with-param name="restricted-to" tunnel="yes"
-              select="$matching-clades[1]/ancestor-or-self::cascade:clade"/>
+              select="$matching-clades[1]/ancestor-or-self::tr:clade"/>
             <xsl:with-param name="matching-clade" select="$matching-clades[1]" tunnel="yes"/>
-            <xsl:with-param name="content-base-uri" select="/cascade:conf/@content-base-uri" tunnel="yes"/>
-            <xsl:with-param name="code-base-uri" select="$cascade:adaptions-path" tunnel="yes"/>
+            <xsl:with-param name="content-base-uri" select="/tr:conf/@content-base-uri" tunnel="yes"/>
+            <xsl:with-param name="code-base-uri" select="$tr:adaptions-path" tunnel="yes"/>
           </xsl:apply-templates>
         </xsl:variable>
         <xsl:result-document href="cascade/2_conf-filter.xml">
           <xsl:sequence select="$filter-matching-clades"/>  
         </xsl:result-document>
-        <xsl:apply-templates select="$filter-matching-clades[1]" mode="cascade:create-paths-doc">
+        <xsl:apply-templates select="$filter-matching-clades[1]" mode="tr:create-paths-doc">
           <xsl:with-param name="matching-clades" select="$matching-clades" tunnel="yes"/>
         </xsl:apply-templates>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
 
+  <!--<xsl:template match="/" priority="2">
+    <xsl:variable name="out" as="node()*">
+      <xsl:next-match/>
+    </xsl:variable>
+    <xsl:message select="'OOOOOOOOOOOOOOOOO ', $out"/>
+    <xsl:sequence select="$out"/>
+  </xsl:template>-->
 
-  <xsl:template match="/*" mode="cascade:prequalify-matching-clades">
+
+  <xsl:function name="tr:diagnostic-string" as="xs:string?">
+    <xsl:param name="atts" as="attribute(*)*"/>
+    <xsl:variable name="prelim" as="attribute(*)*">
+      <xsl:perform-sort>
+        <xsl:sort select="name()"/>
+        <xsl:sequence select="$atts"/>
+      </xsl:perform-sort>
+    </xsl:variable>
+    <xsl:sequence select="string-join(for $a in $prelim return concat(name($a), '=', $a), ' ')"/>
+  </xsl:function>
+
+  <xsl:template match="/*" mode="tr:prequalify-matching-clades">
     <xsl:param name="clade-name-value-pairs" as="attribute(*)*" tunnel="yes"/>
     <xsl:copy>
       <xsl:sequence select="$clade-name-value-pairs"/>
@@ -162,19 +183,20 @@
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template match="cascade:clade | cascade:content" mode="cascade:prequalify-matching-clades">
+  <xsl:template match="tr:clade | tr:content" mode="tr:prequalify-matching-clades">
     <xsl:param name="clade-name-value-pairs" as="attribute(*)*" tunnel="yes"/>
+    <xsl:message select="'CCCCCCCC ', $clade-name-value-pairs"></xsl:message>
     <xsl:copy>
       <xsl:choose>
         <xsl:when test="some $nvp in $clade-name-value-pairs
                         satisfies (
-                          (name($nvp) = self::cascade:clade/@role and not(string($nvp) = @name))
+                          (name($nvp) = self::tr:clade/@role and not(string($nvp) = @name))
                           and
-                          not(some $d in descendant::cascade:clade 
+                          not(some $d in descendant::tr:clade 
                               satisfies (name($nvp) = $d/@role))) ">
           <!-- There is no clade of the same role below, and this clade’s name does not match. -->
         </xsl:when>
-        <xsl:when test="some $ds in descendant-or-self::cascade:clade 
+        <xsl:when test="some $ds in descendant-or-self::tr:clade 
                         satisfies (exists($clade-name-value-pairs[name() = $ds/@role][. = ($ds/@file-name-component, $ds/@name)]))">
           <xsl:attribute name="matches" select="'maybe'"/>
         </xsl:when>
@@ -182,6 +204,10 @@
           and exists($clade-name-value-pairs[name() = current()/@role][matches(., current()/@name-regex)])">
           <xsl:attribute name="matches" select="'maybe'"/>
           <xsl:attribute name="name" select="$clade-name-value-pairs[name() = current()/@role][matches(., current()/@name-regex)]"/>
+        </xsl:when>
+        <xsl:when test="exists(current()/@name-regex)
+          and exists($clade-name-value-pairs[name() = current()/@role][not(matches(., current()/@name-regex))])">
+          <xsl:attribute name="matches" select="'false'"/>
         </xsl:when>
         <xsl:when test="not(exists(current()/(@name | @name-regex)))
           and exists($clade-name-value-pairs[name() = current()/@role])">
@@ -194,28 +220,30 @@
   </xsl:template>
   
 
-  <xsl:template match="*[not(@matches = ('true', 'maybe'))]" mode="cascade:conf-filter" priority="2"/>
+  <xsl:template match="*[not(@matches = ('true', 'maybe'))]" mode="tr:conf-filter" priority="2"/>
 
-  <xsl:template match="cascade:clade[@matches = ('true', 'maybe')]/@matches" mode="cascade:conf-filter">
+  <xsl:template match="tr:clade[@matches = ('true', 'maybe')]/@matches" mode="tr:conf-filter">
     <xsl:attribute name="matches" select="'true'"/>
   </xsl:template>
 
-  <xsl:template match="cascade:param" mode="cascade:conf-filter" priority="3">
+  <xsl:template match="tr:param" mode="tr:conf-filter" priority="3">
     <xsl:copy-of select="."/>
   </xsl:template>
 
-  <xsl:template match="cascade:clade" mode="cascade:conf-filter">
+  <xsl:template match="tr:clade" mode="tr:conf-filter">
     <xsl:param name="content-base-uri" as="xs:string" tunnel="yes"/>
     <xsl:param name="code-base-uri" as="xs:string" tunnel="yes"/>
     <xsl:param name="restricted-to" as="element(*)+" tunnel="yes"/>
-    <xsl:param name="matching-clade" as="element(cascade:clade)" tunnel="yes"/>
+    <xsl:param name="matching-clade" as="element(tr:clade)" tunnel="yes"/>
     <xsl:if test=". intersect $restricted-to">
       <xsl:variable name="new-content-base-uri" as="xs:string" 
-        select="tr:uri-composer(concat($content-base-uri, @name, '/'), @content-base-uri)"/>
+        select="tr:uri-composer(concat($content-base-uri, @name, '/'), concat(@content-base-uri, '/'))"/>
       <xsl:variable name="new-code-base-uri" as="xs:string" select="(concat(replace($code-base-uri, '/+$', ''), '/', @name, '/'), @code-base-uri)[last()]"/>
       <xsl:copy>
-        <xsl:attribute name="stack-pos" select="count(descendant-or-self::cascade:clade[exists(. intersect $matching-clade/ancestor-or-self::*)])
-                                                + count($matching-clade/descendant::cascade:content[@matches][every $c in ancestor::cascade:clade satisfies $c/@matches])"/>
+        <xsl:attribute name="stack-pos" 
+          select="count(descendant-or-self::tr:clade[exists(. intersect $matching-clade/ancestor-or-self::*)])
+                  + count($matching-clade/descendant::tr:content[@matches = ('true', 'maybe')]
+                                                                       [every $c in ancestor::tr:clade satisfies ($c/@matches = ('true', 'maybe'))])"/>
         <xsl:attribute name="content-base-uri" select="$new-content-base-uri"/>
         <xsl:attribute name="code-base-uri" select="$new-code-base-uri"/>
         <xsl:apply-templates select="@* except @content-base-uri, 
@@ -227,14 +255,14 @@
     </xsl:if>
   </xsl:template>
   
-  <xsl:template match="cascade:content" mode="cascade:conf-filter">
-    <xsl:param name="matching-clade" tunnel="yes" as="element(cascade:clade)"/>
+  <xsl:template match="tr:content" mode="tr:conf-filter">
+    <xsl:param name="matching-clade" tunnel="yes" as="element(tr:clade)"/>
     <xsl:param name="content-base-uri" as="xs:string" tunnel="yes"/>
     <xsl:if test="exists($matching-clade//* intersect .)">
       <xsl:variable name="new-content-base-uri" as="xs:string" 
-        select="tr:uri-composer(concat($content-base-uri, @name, '/'), @content-base-uri)"/>
+        select="tr:uri-composer(concat($content-base-uri, @name, '/'), concat(@content-base-uri, '/'))"/>
       <xsl:copy>
-        <xsl:attribute name="stack-pos" select="count(descendant-or-self::cascade:content[@matches])"/>
+        <xsl:attribute name="stack-pos" select="count(descendant-or-self::tr:content[@matches = ('true', 'maybe')])"/>
         <xsl:copy-of select="ancestor::*[last()]/(@* except @content-base-uri)"/>
         <xsl:attribute name="content-base-uri" select="$new-content-base-uri"/>
         <xsl:apply-templates select="@* except @content-base-uri, node()" mode="#current">
@@ -244,20 +272,20 @@
     </xsl:if>
   </xsl:template>
   
-  <xsl:template match="cascade:clade[not(parent::*)] | cascade:content[not(parent::*)]" mode="cascade:create-paths-doc">
-    <xsl:param name="matching-clades" as="element(cascade:clade)*" tunnel="yes"/>
+  <xsl:template match="tr:clade[not(parent::*)] | tr:content[not(parent::*)]" mode="tr:create-paths-doc">
+    <xsl:param name="matching-clades" as="element(tr:clade)*" tunnel="yes"/>
     <c:param-set>
       <xsl:variable name="prelim" as="element(c:param)+">
         <c:param name="matching-clades" value="{count($matching-clades)}"/>
         <!-- s9y is for 'specificity' -->
         <xsl:variable name="s9y" select="xs:integer(@stack-pos) + 1" as="xs:integer"/>
         <c:param name="s9y{$s9y}-role" value="common"/>
-        <c:param name="s9y{$s9y}-path-canonical" value="{tr:reverse-resolve-uri-by-catalog($cascade:common-path, $cascade:catalog)}"/>
-        <c:param name="s9y{$s9y}-path" value="{tr:resolve-uri-by-catalog($cascade:common-path, $cascade:catalog)}"/>
+        <c:param name="s9y{$s9y}-path-canonical" value="{tr:reverse-resolve-uri-by-catalog($tr:common-path, $tr:catalog)}"/>
+        <c:param name="s9y{$s9y}-path" value="{tr:resolve-uri-by-catalog($tr:common-path, $tr:catalog)}"/>
         <xsl:next-match/>
         <!-- They’re at the end which means that they will override even the most specific 
           conf param. Typically they’ll be command-line params. -->
-        <xsl:call-template name="cascade:other-params"/>
+        <xsl:call-template name="tr:other-params"/>
       </xsl:variable>
       <xsl:for-each-group select="$prelim" group-by="@name">
         <xsl:sort select="@name"/>
@@ -266,86 +294,86 @@
     </c:param-set>
   </xsl:template>
   
-  <xsl:template match="cascade:clade | cascade:content" mode="cascade:create-paths-doc">
+  <xsl:template match="tr:clade | tr:content" mode="tr:create-paths-doc">
     <xsl:variable name="s9y" as="xs:integer" select="@stack-pos"/>
     <!-- we called that adaption instead of adaptation, but we won’t call it specifity instead of specificity -->
     <c:param name="s9y{$s9y}-role" value="{@role}"/>
     <xsl:variable name="path" as="xs:string" 
-      select="if (self::cascade:content) 
+      select="if (self::tr:content) 
               then @content-base-uri
               else @code-base-uri"/>
-    <c:param name="s9y{$s9y}-path" value="{tr:resolve-uri-by-catalog($path, $cascade:catalog)}"/>
-    <c:param name="s9y{$s9y}-path-canonical" value="{tr:reverse-resolve-uri-by-catalog($path, $cascade:catalog)}"/>
+    <c:param name="s9y{$s9y}-path" value="{tr:resolve-uri-by-catalog($path, $tr:catalog)}"/>
+    <c:param name="s9y{$s9y}-path-canonical" value="{tr:reverse-resolve-uri-by-catalog($path, $tr:catalog)}"/>
     <c:param name="s9y{$s9y}" value="{@name}"/>
     <xsl:if test="$s9y = 1">
-      <xsl:variable name="href" select="cascade:href-by-content-clade(.)"/>
-      <c:param name="repo-href-local" value="{tr:resolve-uri-by-catalog($href, $cascade:catalog)}"/>
+      <xsl:variable name="href" select="tr:href-by-content-clade(.)"/>
+      <c:param name="repo-href-local" value="{tr:resolve-uri-by-catalog($href, $tr:catalog)}"/>
       <c:param name="repo-href-canonical" value="{$href}"/>
     </xsl:if>
-    <xsl:apply-templates select="cascade:param | cascade:clade | cascade:content" mode="#current"/>
+    <xsl:apply-templates select="tr:param | tr:clade | tr:content" mode="#current"/>
   </xsl:template>
 
   <!-- Computes the repository URI of an uploaded file, after it has been determined which clade it belongs to. -->
-  <xsl:function name="cascade:href-by-content-clade" as="xs:string">
-    <xsl:param name="content" as="element(cascade:content)"/>
-    <xsl:variable name="target-subdir" as="xs:string" select="cascade:target-subdir($content)"/>
+  <xsl:function name="tr:href-by-content-clade" as="xs:string">
+    <xsl:param name="content" as="element(tr:content)"/>
+    <xsl:variable name="target-subdir" as="xs:string" select="tr:target-subdir($content)"/>
     <xsl:sequence select="concat($content/@content-base-uri, $target-subdir, '/'[normalize-space($target-subdir)], string-join(($content/@base, $content/@ext[normalize-space()]), '.'))"/>
   </xsl:function>
 
-  <xsl:function name="cascade:target-subdir" as="xs:string">
-    <xsl:param name="content" as="element(cascade:content)"/>
-    <xsl:apply-templates select="$content/@ext" mode="cascade:ext-to-target-subdir"/>
+  <xsl:function name="tr:target-subdir" as="xs:string">
+    <xsl:param name="content" as="element(tr:content)"/>
+    <xsl:apply-templates select="$content/@ext" mode="tr:ext-to-target-subdir"/>
   </xsl:function>
 
-  <xsl:template match="@ext" mode="cascade:ext-to-target-subdir">
+  <xsl:template match="@ext" mode="tr:ext-to-target-subdir">
     <xsl:sequence select="string(.)"/>
   </xsl:template>
 
-  <xsl:template match="@ext[. = ('png', 'jpg')]" mode="cascade:ext-to-target-subdir">
+  <xsl:template match="@ext[. = ('png', 'jpg')]" mode="tr:ext-to-target-subdir">
     <xsl:sequence select="if (../@base[matches(., '_COVER$')]) then 'images/cover' else 'images'"/>
   </xsl:template>
 
-  <xsl:template match="@ext[. = 'report.xhtml']" mode="cascade:ext-to-target-subdir">
+  <xsl:template match="@ext[. = 'report.xhtml']" mode="tr:ext-to-target-subdir">
     <xsl:sequence select="'report'"/>
   </xsl:template>
   
-  <xsl:template match="@ext[. = 'indb.xml']" mode="cascade:ext-to-target-subdir">
+  <xsl:template match="@ext[. = 'indb.xml']" mode="tr:ext-to-target-subdir">
     <xsl:sequence select="'idml'"/>
   </xsl:template>
   
-  <xsl:template match="@ext[. = 'mobi']" mode="cascade:ext-to-target-subdir">
+  <xsl:template match="@ext[. = 'mobi']" mode="tr:ext-to-target-subdir">
     <xsl:sequence select="'epub'"/>
   </xsl:template>
 
 
-  <xsl:template match="cascade:param" mode="cascade:create-paths-doc">
+  <xsl:template match="tr:param" mode="tr:create-paths-doc">
     <c:param>
       <xsl:copy-of select="@*"/>
     </c:param>
   </xsl:template>
 
-  <xsl:variable name="cascade:clades-token-regex" select="'^([a-zA-Z][-a-zA-Z0-9]+)[=_]([-.a-zA-Z0-9~]+)$'" as="xs:string"/>
+  <xsl:variable name="tr:clades-token-regex" select="'^([a-zA-Z][-a-zA-Z0-9]+)[=_]([-.a-zA-Z0-9~]+)$'" as="xs:string"/>
 
-  <xsl:function name="cascade:parse-clades-string" as="attribute(*)*">
+  <xsl:function name="tr:parse-clades-string" as="attribute(*)*">
     <xsl:param name="input" as="xs:string?"/>
     <!-- e.g., 'production-line=default,work=00429, chapter=02' -->
     <xsl:for-each select="tokenize($input, '[,/\s+]')[normalize-space()]">
-      <xsl:analyze-string select="." regex="{$cascade:clades-token-regex}">
+      <xsl:analyze-string select="." regex="{$tr:clades-token-regex}">
         <xsl:matching-substring>
           <xsl:attribute name="{regex-group(1)}" select="regex-group(2)"/>
         </xsl:matching-substring>
         <xsl:non-matching-substring>
           <xsl:message
-            select="concat('A clade name=value token must match the regular expression ''', $cascade:clades-token-regex, '''', '. Found: ''', ., '''')"
+            select="concat('A clade name=value token must match the regular expression ''', $tr:clades-token-regex, '''', '. Found: ''', ., '''')"
           />
         </xsl:non-matching-substring>
       </xsl:analyze-string>
     </xsl:for-each>
   </xsl:function>
 
-  <xsl:function name="cascade:parse-file-name" as="attribute(*)*">
+  <xsl:function name="tr:parse-file-name" as="attribute(*)*">
     <xsl:param name="filename" as="xs:string?"/>
-    <xsl:variable name="basename" select="cascade:basename($filename)"/>
+    <xsl:variable name="basename" select="tr:basename($filename)"/>
     <xsl:analyze-string select="$basename" regex="^([^_]+?)_([^_]+?)_(.+)$">
       <xsl:matching-substring>
         <!-- 'publisher', 'series', and 'work' are merely examples for clade roles. Override this 
@@ -358,27 +386,30 @@
         <xsl:attribute name="work" select="."/>
       </xsl:non-matching-substring>
     </xsl:analyze-string>
-    <xsl:attribute name="ext" select="cascade:ext($filename)"/>
+    <xsl:attribute name="ext" select="tr:ext($filename)"/>
     <xsl:attribute name="basename" select="$basename"/>
   </xsl:function>
 
-  <xsl:function name="cascade:basename" as="xs:string">
+  <xsl:function name="tr:basename" as="xs:string">
     <xsl:param name="filename" as="xs:string"/>
     <xsl:sequence select="replace($filename, '^(.+/)?([^./]+)(\.[a-z0-9]+)*?/*$', '$2', 'i')"/>
   </xsl:function>
 
-  <xsl:function name="cascade:ext" as="xs:string">
+  <xsl:function name="tr:ext" as="xs:string">
     <!-- Example: file:/path/base.hub.xml → 'hub.xml' -->
     <xsl:param name="filename" as="xs:string"/>
     <xsl:sequence select="replace($filename, '^.+?(\.([^/]+))?/*$', '$2')"/>
   </xsl:function>
 
-  <xsl:template name="cascade:other-params">
+  <xsl:template name="tr:other-params">
     <!-- Disable XSLT-based debugging (whether XProc-based debugging takes place is determined by the XProc debug option, not by a param): -->
     <c:param name="debug" value="'no'"/>
     <c:param name="debug-dir-uri" value="{$debug-dir-uri}"/>
     <c:param name="srcpaths" value="yes"/>
     <c:param name="pipeline" value="{$pipeline}"/>
+    <c:param name="_params-given-in-clades-string" value="{tr:diagnostic-string($parse-clades-string)}"/>
+    <c:param name="_params-given" value="{tr:diagnostic-string($all-atts)}"/>
+    <c:param name="_params-from-filename-parsing" value="{tr:diagnostic-string($parse-file-name)}"/>
     <!-- svn: -->
     <c:param name="transpect-project-uri"
       value="{if (collection()/info/entry) then string-join((collection()/info/entry[1]/url, collection()/info/entry[1]/commit/@revision), '?p=') else ''}"/>
@@ -396,8 +427,8 @@
       any of certain types of input files (e.g., a .docx or an .idml) --> 
     <xsl:if test="$file">
       <c:param name="file" value="{$file}"/>
-      <c:param name="ext" value="{cascade:ext($file)}"/>
-      <c:param name="basename" value="{cascade:basename($file)}"/>
+      <c:param name="ext" value="{($all-atts[name() = 'ext'], tr:ext($file))[1]}"/>
+      <c:param name="basename" value="{tr:basename($file)}"/>
     </xsl:if>
   </xsl:template>
 

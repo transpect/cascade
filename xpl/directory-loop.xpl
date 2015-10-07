@@ -2,10 +2,9 @@
 <p:declare-step xmlns:p="http://www.w3.org/ns/xproc"
   xmlns:c="http://www.w3.org/ns/xproc-step" 
   xmlns:tr="http://transpect.io"
-  xmlns:cascade="http://transpect.io/cascade"
   version="1.0" 
   name="directory-loop"
-  type="cascade:directory-loop">
+  type="tr:directory-loop">
   
   <p:documentation>
     <h1>Loop through directories, collect parameter documents and tie them up in a bundle</h1>
@@ -71,11 +70,11 @@
     <p:choose>
       <p:when test="$depth != 0">
         
-        <cascade:directory-loop>
+        <tr:directory-loop>
           <p:with-option name="path" select="$path"/>
           <p:with-option name="exclude-filter" select="$exclude-filter"/>
           <p:with-option name="depth" select="$depth - 1"/>
-        </cascade:directory-loop>
+        </tr:directory-loop>
         
       </p:when>
       <p:otherwise>

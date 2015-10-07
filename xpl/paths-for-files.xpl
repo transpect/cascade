@@ -6,7 +6,6 @@
   xmlns:cxf="http://xmlcalabash.com/ns/extensions/fileutils"
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:tr="http://transpect.io"
-  xmlns:cascade="http://transpect.io/cascade" 
   version="1.0"
   name="paths-for-files">
   
@@ -61,7 +60,7 @@
   
   <p:for-each name="iter">
     <p:iteration-source select="/c:filenames/c:file"/>
-    <cascade:paths name="paths">
+    <tr:paths name="paths">
       <p:with-option name="pipeline" select="'paths-for-files.xpl'"/>
       <p:with-option name="file" select="/*/@name"/>
       <p:with-option name="debug" select="$debug"/>  
@@ -72,7 +71,7 @@
       <p:input port="conf">
         <p:pipe port="conf" step="paths-for-files"/>
       </p:input>
-    </cascade:paths>
+    </tr:paths>
     <tr:file-uri name="file-uri">
       <p:with-option name="filename" select="/c:param-set/c:param[@name eq 'repo-href-local']/@value"/>
     </tr:file-uri>
@@ -93,7 +92,7 @@
       <p:when test="/c:param-set/c:param[@name eq 'matching-clades']/@value = '0'">
         <p:choose>
           <p:when test="$fail-on-error = 'true'">
-            <p:error code="cascade:PATH02">
+            <p:error code="tr:PATH02">
               <p:input port="source">
                 <p:pipe port="result" step="error-message"/>
               </p:input>

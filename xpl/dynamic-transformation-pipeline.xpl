@@ -4,22 +4,21 @@
   xmlns:c="http://www.w3.org/ns/xproc-step"  
   xmlns:cx="http://xmlcalabash.com/ns/extensions" 
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
-  xmlns:cascade="http://transpect.io/cascade"
   xmlns:tr="http://transpect.io"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   version="1.0"
   name="dtp"
-  type="cascade:dynamic-transformation-pipeline">
+  type="tr:dynamic-transformation-pipeline">
   
   <p:documentation>This encapsulates the dynamic loading of an XSLT stylesheet and an XPL pipeline and execution of the
-    pipeline. Dynamic loading means that the most specific (specificity cascade: work, series, publisher, common) XSL and XPL
+    pipeline. Dynamic loading means that the most specific (specificity tr: work, series, publisher, common) XSL and XPL
     files will be loaded. The pipeline usually consists of transformations with the same dynamically loaded stylesheet in different
     modes, according to the dynamically loaded pipeline (that consists of tr:xslt-mode steps). The pipeline may have multiple
     documents on the source and result ports. The transformation will be applied to each document in turn. 
     
     Additional input files that will be passed to each transformation may be sent to the additional-input port. They must be 
     wrapped in cx:document with the appropriate port name of the dynamically executed pipeline. Even if you don’t have additional 
-    inputs, make sure to always include the additional-inputs port when invoking cascade:dynamic-transformation-pipeline. Connect it to
+    inputs, make sure to always include the additional-inputs port when invoking tr:dynamic-transformation-pipeline. Connect it to
     p:empty by default. Please note the difference between a sequence of source documents (will be transformed one by one) and a
     sequence of additional files (will be available to the dynamically loaded pipeline and will typically be used as additional
     input documents for some of the tr:xslt-mode steps therein, thus making it available via the default collection in each 
@@ -80,7 +79,7 @@
 
   <p:sink/>
 
-  <cascade:load-cascaded name="load-stylesheet">
+  <tr:load-cascaded name="load-stylesheet">
     <p:with-option name="filename" select="concat($load, '.xsl')"/>
     <p:with-option name="fallback" select="$fallback-xsl"/>
     <p:input port="paths">
@@ -88,7 +87,7 @@
     </p:input>
     <p:with-option name="debug" select="$debug"/>
     <p:with-option name="debug-dir-uri" select="$debug-dir-uri"/>
-  </cascade:load-cascaded>
+  </tr:load-cascaded>
   
   <p:sink/>
   
@@ -102,12 +101,12 @@
   
   <p:sink/> 
   
-  <cascade:load-cascaded name="pipeline">
+  <tr:load-cascaded name="pipeline">
     <p:with-option name="filename" select="concat($load, '.xpl')"/>
     <p:with-option name="fallback" select="$fallback-xpl"/>
     <p:with-option name="debug" select="$debug"/>
     <p:with-option name="debug-dir-uri" select="$debug-dir-uri"/>
-  </cascade:load-cascaded>
+  </tr:load-cascaded>
   
   <p:try name="validate-pipeline">
     <p:group>

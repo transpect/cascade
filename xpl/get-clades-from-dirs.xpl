@@ -3,10 +3,9 @@
   xmlns:c="http://www.w3.org/ns/xproc-step" 
   xmlns:cx="http://xmlcalabash.com/ns/extensions" 
   xmlns:tr="http://transpect.io"
-  xmlns:cascade="http://transpect.io/cascade"
   version="1.0" 
   name="get-clades-from-dirs" 
-  type="cascade:get-clades-from-dirs">
+  type="tr:get-clades-from-dirs">
   
   <p:input port="params">
     <p:documentation xmlns="http://www.w3.org/1999/xhtml">
@@ -53,10 +52,10 @@
         * the locaction of the parameter document is the initial point of the cascade.
         * -->
   
-  <cascade:directory-loop>
+  <tr:directory-loop>
     <p:with-option name="path" select="replace(base-uri(/c:param-set), '^(.+)/.+$', '$1')"/>
     <p:with-option name="exclude-filter" select="/c:param-set/c:param[@name eq 'exclude-filter']/@value"/>
-  </cascade:directory-loop>
+  </tr:directory-loop>
   
   <tr:store-debug pipeline-step="cascade/dirs-and-params">
     <p:with-option name="active" select="$debug"/>

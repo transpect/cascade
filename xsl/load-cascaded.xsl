@@ -3,8 +3,8 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:c="http://www.w3.org/ns/xproc-step"
-  xmlns:cascade="http://transpect.io/cascade" 
-  exclude-result-prefixes="xs cascade" 
+  xmlns:tr="http://transpect.io" 
+  exclude-result-prefixes="xs tr" 
   version="2.0">
   
   <xsl:param name="interface-language" select="'en'" as="xs:string"/>
@@ -36,7 +36,7 @@
     </xsl:if>
     <xsl:sequence select="if (empty($cascade))
                           then doc($fallback)
-                          else cascade:load($cascade, $filename)"/>
+                          else tr:load($cascade, $filename)"/>
   </xsl:template>
 
   <xsl:template name="return-cascade-paths">
@@ -51,11 +51,11 @@
       select="if($fallback ne '') 
               then string-join(tokenize($fallback, '/')[position() != last()], '/')
               else ()"/>
-    <cascade:results>
+    <tr:results>
       <xsl:for-each select="for $i in $cascade return concat($i, $directory-from-filename), $fallback-directory">
-        <cascade:result path="{current()}"/>
+        <tr:result path="{current()}"/>
       </xsl:for-each>
-    </cascade:results>
+    </tr:results>
   </xsl:template>
 
   <xsl:template name="return-cascaded-binary-uri">
@@ -64,7 +64,7 @@
     <xsl:variable name="full-name" select="concat($existing-binary-directory/@xml:base, $filename-only)"/>
     <xsl:choose>
       <xsl:when test="$existing-binary-directory">
-        <cascade:result>
+        <tr:result>
           <xsl:attribute name="uri">
             <xsl:message>load-cascaded binary: using <xsl:value-of select="$full-name"/></xsl:message>
             <xsl:choose>
@@ -85,10 +85,10 @@
           <xsl:attribute name="filename">
             <xsl:value-of select="replace(resolve-uri($full-name), '^file:(//)?(.+)\.\w+$', '$2')"/>
           </xsl:attribute>
-        </cascade:result>
+        </tr:result>
       </xsl:when>
       <xsl:otherwise>
-        <!-- add another xsl-choose to identify fallback (see function cascade:load)? -->
+        <!-- add another xsl-choose to identify fallback (see function tr:load)? -->
         <xsl:message terminate="{$required}"> load-cascaded binary: no file available, <xsl:value-of select="$filename"/>
         </xsl:message>
       </xsl:otherwise>
@@ -98,7 +98,7 @@
 
   <!-- functions -->
   
-  <xsl:function name="cascade:load" as="document-node(element(*))?">
+  <xsl:function name="tr:load" as="document-node(element(*))?">
     <xsl:param name="base-paths" as="xs:string+"/>
     <xsl:param name="file-name" as="xs:string"/>
     <xsl:variable name="full-name" select="string(resolve-uri($file-name, $base-paths[1]))" as="xs:string"/>
@@ -108,21 +108,21 @@
     <xsl:choose>
       <xsl:when test="doc-available($l10n-name)">
         <xsl:message>load-cascaded: using <xsl:value-of select="$l10n-name"/></xsl:message>
-        <xsl:sequence select="cascade:load-document-nodes($l10n-name)"/>
+        <xsl:sequence select="tr:load-document-nodes($l10n-name)"/>
       </xsl:when>
       <xsl:when test="doc-available($full-name)">
         <xsl:message>load-cascaded: using <xsl:value-of select="$full-name"/></xsl:message>
-        <xsl:sequence select="cascade:load-document-nodes($full-name)"/>
+        <xsl:sequence select="tr:load-document-nodes($full-name)"/>
       </xsl:when>
       <xsl:when test="doc-available(concat($full-name, '.xsl'))">
         <xsl:message>load-cascaded: using XSLT <xsl:value-of select="concat($full-name, '.xsl')"/> to obtain a document dynamically</xsl:message>
-        <xsl:sequence select="cascade:load-document-nodes(concat($full-name, '.xsl'))"/>
+        <xsl:sequence select="tr:load-document-nodes(concat($full-name, '.xsl'))"/>
       </xsl:when>
       <xsl:when test="count($base-paths) eq 1">
         <xsl:choose>
           <xsl:when test="$fallback ne '' and doc-available($fallback)">
             <xsl:message>load-cascaded: using fallback <xsl:value-of select="$fallback"/></xsl:message>
-            <xsl:sequence select="cascade:load-document-nodes(xs:anyURI($fallback))"/>
+            <xsl:sequence select="tr:load-document-nodes(xs:anyURI($fallback))"/>
           </xsl:when>
           <xsl:otherwise>
             <xsl:message terminate="{$required}"> load-cascaded: no file available, <xsl:value-of select="$file-name"/>
@@ -131,12 +131,12 @@
         </xsl:choose>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:sequence select="cascade:load($base-paths[position() gt 1], $file-name)"/>
+        <xsl:sequence select="tr:load($base-paths[position() gt 1], $file-name)"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:function>
 
-  <xsl:function name="cascade:load-document-nodes" as="document-node(element(*))?">
+  <xsl:function name="tr:load-document-nodes" as="document-node(element(*))?">
     <xsl:param name="file-uri" as="xs:string"/>
     <xsl:apply-templates select="doc($file-uri)" mode="add-base">
       <xsl:with-param name="base" select="$file-uri"/>

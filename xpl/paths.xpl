@@ -2,11 +2,10 @@
 <p:declare-step xmlns:p="http://www.w3.org/ns/xproc" 
   xmlns:c="http://www.w3.org/ns/xproc-step"  
   xmlns:cx="http://xmlcalabash.com/ns/extensions" 
-  xmlns:cascade="http://transpect.io/cascade"
   xmlns:tr="http://transpect.io"
   version="1.0"
   name="paths"
-  type="cascade:paths">
+  type="tr:paths">
   
   <p:option name="debug" select="'no'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>
@@ -35,7 +34,7 @@
   <p:input port="stylesheet" primary="true">
     <p:documentation>The default path calculation stylesheet. Most probably you will want to define your own stylesheet for your project.
       This stylesheet will most probably import the default stylesheet.</p:documentation>
-    <p:document href="../xsl/paths.xsl"/>
+<!--    <p:document href="../xsl/paths.xsl"/>-->
   </p:input>
   <p:input port="params" sequence="true" primary="false">
     <p:documentation>Additional parameters for the path calculation stylesheet can be submitted over this port.</p:documentation>
@@ -108,9 +107,9 @@
 
       <p:xslt name="xslt">
         <p:documentation xmlns="http://www.w3.org/1999/xhtml">
-          <p>The stylesheet provides one essential customization point: cascade:parse-file-name() that accepts a file uri,
+          <p>The stylesheet provides one essential customization point: tr:parse-file-name() that accepts a file uri,
             typically with an extension and a directory path. It may then analyze this filename, potentially after applying
-            cascade:basename() in order to strip paths and the extension. The function produces a sequence of attributes whose
+            tr:basename() in order to strip paths and the extension. The function produces a sequence of attributes whose
             names should correspond to clade roles and whose values should correspond to clade names.</p>
           <p>Another cutomization point is the template named 'main-file-xml'. The stylesheet parameter 'filenames' (xs:string)
             will be split at whitespace. It is supposed to output a <code>&lt;files></code> document that contains a
@@ -163,7 +162,7 @@
       <p:output port="report">
         <p:pipe port="result" step="propagate"/>
       </p:output>
-       <tr:propagate-caught-error name="propagate" msg-file="paths-error.txt" code="cascade:PATH01" severity="warning">
+       <tr:propagate-caught-error name="propagate" msg-file="paths-error.txt" code="tr:PATH01" severity="warning">
         <p:with-option name="status-dir-uri" select="$status-dir-uri"/>
         <p:input port="source">
           <p:pipe port="error" step="catch"/>

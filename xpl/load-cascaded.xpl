@@ -5,14 +5,13 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:s="http://purl.oclc.org/dsdl/schematron"
-  xmlns:cascade="http://transpect.io/cascade"
   xmlns:tr="http://transpect.io"
   version="1.0">
 
   <p:import href="http://xmlcalabash.com/extension/steps/library-1.0.xpl" />
   <p:import href="http://transpect.io/xproc-util/store-debug/xpl/store-debug.xpl"/>
 
-  <p:declare-step name="load-cascaded" type="cascade:load-cascaded">
+  <p:declare-step name="load-cascaded" type="tr:load-cascaded">
     <p:documentation>Loads the most specific XML file $filename from a sequence of paths, supplied as 
     parameters on the paths port ($s9y1-path, $s9y2-path, …, in descending specificity). 
     The XML file can be an XProc pipeline, an XSLT stylesheet, a Schematron schema, an XHTML file, whatever.  
@@ -86,8 +85,8 @@
 
   <!-- step load-cascaded-binary: retrieve an uri for a binary file
        input example: idml/templates/two-column-layout.idml
-       output will be /cascade:result[@uri] -->
-  <p:declare-step name="load-cascaded-binary" type="cascade:load-cascaded-binary">
+       output will be /tr:result[@uri] -->
+  <p:declare-step name="load-cascaded-binary" type="tr:load-cascaded-binary">
 
     <p:option name="filename" required="true"/>
     <p:option name="required" required="false" select="'yes'"/>
@@ -112,7 +111,7 @@
     </p:xslt>
 
     <p:for-each name="cascade-directory-list">
-      <p:iteration-source select="/cascade:results/cascade:result"/>
+      <p:iteration-source select="/tr:results/tr:result"/>
       <p:try>
         <p:group>
           <p:directory-list>
@@ -144,7 +143,7 @@
 
   </p:declare-step>
 
-  <p:declare-step name="load-whole-cascade" type="cascade:load-whole-cascade">
+  <p:declare-step name="load-whole-cascade" type="tr:load-whole-cascade">
     <p:documentation>Loads all documents of a specific name from the path cascade. 
     The most generic document will be first, the most specific last.</p:documentation>
     <p:option name="filename" required="true"/>
@@ -173,18 +172,18 @@
             <xsl:param name="s9y7-path" as="xs:string?"/>
             <xsl:param name="s9y8-path" as="xs:string?"/>
             <xsl:param name="s9y9-path" as="xs:string?"/>
-            <xsl:function name="cascade:load-docs" as="document-node()*">
+            <xsl:function name="tr:load-docs" as="document-node()*">
               <xsl:param name="filename" as="xs:string"/>
               <xsl:param name="uris" as="xs:string*"/>
               <xsl:if test="exists($uris)">
                 <xsl:if test="doc-available(concat($uris[1], '/', $filename))">
                   <xsl:sequence select="doc(concat($uris[1], '/', $filename))"/>
                 </xsl:if>
-                <xsl:sequence select="cascade:load-docs($filename, $uris[position() gt 1])"/>
+                <xsl:sequence select="tr:load-docs($filename, $uris[position() gt 1])"/>
               </xsl:if>
             </xsl:function>
             <xsl:variable name="docs" as="document-node()*"
-              select="cascade:load-docs($filename, ($s9y9-path, $s9y8-path, $s9y7-path, $s9y6-path, $s9y5-path, $s9y4-path, $s9y3-path, $s9y2-path, $s9y1-path))"/>
+              select="tr:load-docs($filename, ($s9y9-path, $s9y8-path, $s9y7-path, $s9y6-path, $s9y5-path, $s9y4-path, $s9y3-path, $s9y2-path, $s9y1-path))"/>
             <xsl:template name="main">
               <xsl:for-each select="$docs">
                 <xsl:result-document href="{base-uri(/*)}#">
