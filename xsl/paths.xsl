@@ -65,7 +65,7 @@
   <xsl:output indent="yes"/>
 
   <xsl:variable name="tr:adaptions-path" as="xs:string" 
-    select="'http://transpect.io/adaptions/'"/>
+    select="'http://this.transpect.io/a9s/'"/>
   
   <xsl:variable name="tr:common-path" as="xs:string" 
     select="'http://this.transpect.io/a9s/common/'"/>
@@ -185,7 +185,6 @@
 
   <xsl:template match="tr:clade | tr:content" mode="tr:prequalify-matching-clades">
     <xsl:param name="clade-name-value-pairs" as="attribute(*)*" tunnel="yes"/>
-    <xsl:message select="'CCCCCCCC ', $clade-name-value-pairs"></xsl:message>
     <xsl:copy>
       <xsl:choose>
         <xsl:when test="some $nvp in $clade-name-value-pairs
