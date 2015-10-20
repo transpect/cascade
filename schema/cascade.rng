@@ -3,10 +3,10 @@
   xmlns="http://relaxng.org/ns/structure/1.0"
   xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0" 
   xmlns:s="http://purl.oclc.org/dsdl/schematron"
-  ns="http://transpect.io/cascade"
+  ns="http://transpect.io"
   datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
 
-  <s:ns uri="http://transpect.io/cascade" prefix="cascade"/>
+  <s:ns uri="http://transpect.io" prefix="tr"/>
 
   <start>
     <ref name="conf"/>
