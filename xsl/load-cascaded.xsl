@@ -35,7 +35,7 @@
       <xsl:message>load-cascaded: the cascade is empty. Are you supplying a paths document?</xsl:message>
     </xsl:if>
     <xsl:sequence select="if (empty($cascade))
-                          then doc($fallback)
+                          then tr:load($fallback, $fallback) (: doc($fallback) :) (:didn't work well because we need tr:load to add an appropriate @xml:base :)
                           else tr:load($cascade, $filename)"/>
   </xsl:template>
 
