@@ -40,7 +40,7 @@
   <p:option name="fallback-xsl" required="false" select="''">
     <p:documentation>Fallback URI to 'default' stylesheet file. Will be loaded when no customization is available 
       in the customization folders for publisher, series, etc. You have to use the URI located in [code repo]/xmlcatalog/catalog.xml
-      together wie the path to the stylesheet. Example (evolve-hub): http://transpect.le-tex.de/evolve-hub/evolve-hub.xsl</p:documentation>
+      together wie the path to the stylesheet. Example (evolve-hub): http://transpect.io/evolve-hub/xsl/evolve-hub.xsl</p:documentation>
   </p:option>
   <p:option name="fallback-xpl" required="false" select="''">
     <p:documentation>Fallback URI to 'default' pipeline file. Leave it empty when no .xpl exists.</p:documentation>
