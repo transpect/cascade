@@ -145,8 +145,10 @@
 
   <p:declare-step name="load-whole-cascade" type="tr:load-whole-cascade">
     <p:documentation>Loads all documents of a specific name from the path cascade. 
-    The most generic document will be first, the most specific last.</p:documentation>
+    With the default order of 'least-specific-first', the most generic document will be first, the most specific last.
+    The option 'order' may be set to 'most-specific-first'.</p:documentation>
     <p:option name="filename" required="true"/>
+    <p:option name="order" select="'least-specific-first'"/>
     <p:input port="paths" kind="parameter" primary="true"/>
     <p:output port="result" primary="true" sequence="true">
       <p:pipe port="secondary" step="xslt-load-whole-cascade"/>
@@ -159,10 +161,12 @@
         <p:pipe port="paths" step="load-whole-cascade"/>
       </p:input>
       <p:with-param name="filename" select="$filename"/>
+      <p:with-param name="order" select="$order"/>
       <p:input port="stylesheet">
         <p:inline>
           <xsl:stylesheet version="2.0">
             <xsl:param name="filename" as="xs:string"/>
+            <xsl:param name="order" as="xs:string"/>
             <xsl:param name="s9y1-path" as="xs:string?"/>
             <xsl:param name="s9y2-path" as="xs:string?"/>
             <xsl:param name="s9y3-path" as="xs:string?"/>
@@ -185,7 +189,7 @@
             <xsl:variable name="docs" as="document-node()*"
               select="tr:load-docs($filename, ($s9y9-path, $s9y8-path, $s9y7-path, $s9y6-path, $s9y5-path, $s9y4-path, $s9y3-path, $s9y2-path, $s9y1-path))"/>
             <xsl:template name="main">
-              <xsl:for-each select="$docs">
+              <xsl:for-each select="if ($order = 'most-specific-first') then reverse($docs) else $docs">
                 <xsl:result-document href="{base-uri(/*)}#">
                   <xsl:sequence select="."/>
                 </xsl:result-document>
