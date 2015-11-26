@@ -38,7 +38,8 @@
       of convenience for other functions, ext="idml" (example), the input file extension(s).
     tr:target-subdir(): Maps file extensions to the subdirs below the content dir
       where they will be stored in the content repo (e.g., 'png' → 'images')
-    
+    tr:target-base-name(): Base name of the target (content repo) file. Default:
+      original base name
     As a second input document, the result of calling svn info -\-xml may be supplied.
     It will be used for the param named transpect-project-uri 
 
@@ -316,9 +317,14 @@
   <xsl:function name="tr:href-by-content-clade" as="xs:string">
     <xsl:param name="content" as="element(tr:content)"/>
     <xsl:variable name="target-subdir" as="xs:string" select="tr:target-subdir($content)"/>
-    <xsl:sequence select="concat($content/@content-base-uri, $target-subdir, '/'[normalize-space($target-subdir)], string-join(($content/@base, $content/@ext[normalize-space()]), '.'))"/>
+    <xsl:sequence select="concat($content/@content-base-uri, $target-subdir, '/'[normalize-space($target-subdir)], string-join((tr:target-base-name($content), $content/@ext[normalize-space()]), '.'))"/>
   </xsl:function>
 
+  <xsl:function name="tr:target-base-name" as="xs:string">
+    <xsl:param name="content" as="element(tr:content)"/>
+    <xsl:sequence select="$content/@base"/>
+  </xsl:function>
+  
   <xsl:function name="tr:target-subdir" as="xs:string">
     <xsl:param name="content" as="element(tr:content)"/>
     <xsl:apply-templates select="$content/@ext" mode="tr:ext-to-target-subdir"/>
