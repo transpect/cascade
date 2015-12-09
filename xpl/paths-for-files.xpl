@@ -19,7 +19,7 @@
   <p:option name="fail-on-error" select="'false'"/>
   
   <p:input port="conf" primary="true">
-    <p:document href="http://customers.transpect.io/cascade/conf/transpect-conf.xml"/>
+    <p:document href="http://this.transpect.io/conf/transpect-conf.xml"/>
   </p:input>
   <p:output port="result" primary="true"/>
   
