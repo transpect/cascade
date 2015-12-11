@@ -397,7 +397,7 @@
 
   <xsl:function name="tr:basename" as="xs:string">
     <xsl:param name="filename" as="xs:string"/>
-    <xsl:value-of select="replace($filename, '^.+/(.+)\.[a-z0-9]+', '$1', 'i')"/>
+    <xsl:sequence select="replace($filename, '^(.+/)?([^./]+)(\.[a-z0-9]+)*?/*$', '$2', 'i')"/>
   </xsl:function>
 
   <xsl:function name="tr:ext" as="xs:string">
