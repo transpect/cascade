@@ -50,8 +50,8 @@
       <zeroOrMore>
         <element name="reserved">
           <s:pattern id="reserved">
-            <s:rule context="cascade:clade">
-              <s:report test="@name = ancestor::cascade:cascade/cascade:reserved/@name">'<s:value-of select="@name"/>' is a reserved name.</s:report>
+            <s:rule context="tr:clade">
+              <s:report test="@name = ancestor::tr:cascade/tr:reserved/@name">'<s:value-of select="@name"/>' is a reserved name.</s:report>
             </s:rule>
           </s:pattern>
           <a:documentation>Subdirectory names (in the code repo below adaptions or in the content repo below the current content
@@ -74,18 +74,18 @@
 
   <define name="clade">
     <s:pattern id="globally-unique">
-      <s:rule context="cascade:clade[not(cascade:clade)]">
-        <s:let name="other-clades" value="//cascade:clade[not(. is current())]"/>
-        <s:let name="other-branch-clades" value="$other-clades[empty(. intersect current()/ancestor::cascade:clade)]"/>
-        <s:let name="footprint" value="for $c in ancestor-or-self::cascade:clade return concat($c/@role, '=', $c/@name)"/>
+      <s:rule context="tr:clade[not(tr:clade)]">
+        <s:let name="other-clades" value="//tr:clade[not(. is current())]"/>
+        <s:let name="other-branch-clades" value="$other-clades[empty(. intersect current()/ancestor::tr:clade)]"/>
+        <s:let name="footprint" value="for $c in ancestor-or-self::tr:clade return concat($c/@role, '=', $c/@name)"/>
         <s:let name="footprint-path" value="string-join($footprint, ',')"/> 
-        <s:report test="$other-clades[every $i in (for $c in ancestor-or-self::cascade:clade return concat($c/@role, '=', $c/@name)) 
+        <s:report test="$other-clades[every $i in (for $c in ancestor-or-self::tr:clade return concat($c/@role, '=', $c/@name)) 
                                       satisfies $i = $footprint]
                                      [every $i in $footprint 
-                                      satisfies $i = (for $c in ancestor-or-self::cascade:clade return concat($c/@role, '=', $c/@name))]
+                                      satisfies $i = (for $c in ancestor-or-self::tr:clade return concat($c/@role, '=', $c/@name))]
          ">There is another clade that may not be discerned from the current clade.
            Please use a different name or surround one of the clades with a clade of a different role.</s:report>
-        <!--<s:report test="$other-branch-clades[string-join(for $c in ancestor-or-self::cascade:clade return concat($c/@role, '=', $c/@name), ',')
+        <!--<s:report test="$other-branch-clades[string-join(for $c in ancestor-or-self::tr:clade return concat($c/@role, '=', $c/@name), ',')
                                               = $footprint-path]
          ">This clade has the same path as another clade. This ambiguity may prevent the converter from selecting a unique clade for a given input.</s:report>-->
       </s:rule>
@@ -109,7 +109,7 @@
   
   <define name="content">
     <s:pattern id="max-levels">
-      <s:rule context="cascade:content[not(*)]">
+      <s:rule context="tr:content[not(*)]">
         <s:assert test="count(ancestor-or-self::*[local-name() = ('content', 'clade')]) le 8">Currently, only 8 levels 
           of configuration (plus a common level) are supported.</s:assert>
       </s:rule>
