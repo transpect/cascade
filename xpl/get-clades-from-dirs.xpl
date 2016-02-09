@@ -26,8 +26,6 @@
     </p:documentation>
   </p:output>
   
-  <p:option name="depth" select="-1"/>
-  
   <p:option name="debug" select="'yes'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>  
   <p:option name="status-dir-uri" select="concat($debug-dir-uri, '/status')"/>
