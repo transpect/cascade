@@ -7,6 +7,20 @@
   name="paths"
   type="tr:paths">
   
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    This step provides the transpect cascade paths document for a given filename. 
+    The filename is passed with the <code>file</code> option. 
+    
+    The step takes two inputs. First, the step expects a transpect clades 
+    configuration. Clades are a hierarchical structure of configuration layers. 
+    These layers are typically represented as directories on the filesystem, where 
+    transpect steps search for overrides. Second, the step takes an XSLT stylesheet. The 
+    stylesheet imports the <code>paths.xsl</code> and is used to override some of its functions, especially for
+    detecting clades based upon file names or other strings.
+    
+    A RelaxNG schema for the clades configuration is here: <code>../schema/cascade.rng</code>.
+  </p:documentation>
+  
   <p:option name="debug" select="'no'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>
   <p:option name="status-dir-uri" select="'status'"/>
