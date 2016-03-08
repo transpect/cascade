@@ -7,7 +7,9 @@
   type="tr:directory-loop">
   
   <p:documentation>
-    <h1>Loop through directories, collect parameter documents and tie them up in a bundle</h1>
+    The step performs a recursive directory listing and
+    looks for parameter documents named 'params.xml'. The parameter documents
+    are included in the XML directory listing.  
   </p:documentation>
   
   <p:output port="result"/>

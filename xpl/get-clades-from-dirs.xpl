@@ -6,6 +6,13 @@
   version="1.0" 
   name="get-clades-from-dirs" 
   type="tr:get-clades-from-dirs">
+
+  <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+    This step converts a transpect clades document from the output
+    of <code>tr:directory-loop</code>. The clades document can be used
+    as input for the <code>tr:paths</code> step. 
+  </p:documentation>
+  
   
   <p:input port="params">
     <p:documentation xmlns="http://www.w3.org/1999/xhtml">
