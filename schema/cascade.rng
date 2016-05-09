@@ -7,6 +7,7 @@
   datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
 
   <s:ns uri="http://transpect.io" prefix="tr"/>
+  <s:ns uri="http://transpect.io/cascade" prefix="cascade"/>
 
   <start>
     <ref name="conf"/>
