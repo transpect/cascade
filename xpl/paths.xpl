@@ -43,12 +43,12 @@
   </p:option>
   
   <p:input port="conf">
-    <p:document href="http://transpect.io/conf/transpect-conf.xml"/>
+    <p:document href="http://this.transpect.io/conf/transpect-conf.xml"/>
   </p:input>
   <p:input port="stylesheet" primary="true">
     <p:documentation>The default path calculation stylesheet. Most probably you will want to define your own stylesheet for your project.
       This stylesheet will most probably import the default stylesheet.</p:documentation>
-<!--    <p:document href="../xsl/paths.xsl"/>-->
+    <p:document href="../xsl/paths.xsl"/>
   </p:input>
   <p:input port="params" sequence="true" primary="false">
     <p:documentation>Additional parameters for the path calculation stylesheet can be submitted over this port.</p:documentation>
