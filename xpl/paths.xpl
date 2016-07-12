@@ -59,7 +59,7 @@
     <p:pipe port="result" step="try"/>  
   </p:output>
   <p:serialization port="result" omit-xml-declaration="false" indent="true"/>
-  <p:output port="report" >
+  <p:output port="report">
     <p:pipe port="report" step="try"/>
   </p:output>
 
@@ -72,11 +72,7 @@
       <p:output port="result" primary="true">
         <p:pipe port="result" step="xslt"/>
       </p:output>
-      <p:output port="report">
-        <p:inline>
-          <c:ok/>
-        </p:inline>
-      </p:output>
+      <p:output port="report" primary="false" sequence="true"/>
 
       <p:choose name="svn-info">
         <p:when test="$determine-transpect-project-version = 'yes'">
@@ -167,22 +163,28 @@
         </tr:store-debug>
         
       </p:for-each>
+      
       <p:sink/>
+      
     </p:group>
+    
     <p:catch name="catch">
       <p:output port="result" primary="true">
         <p:pipe port="result" step="empty-params"/>
       </p:output>
-      <p:output port="report">
+      <p:output port="report" primary="false" sequence="true">
         <p:pipe port="result" step="propagate"/>
       </p:output>
-       <tr:propagate-caught-error name="propagate" msg-file="paths-error.txt" code="tr:PATH01" severity="warning">
+      
+      <tr:propagate-caught-error name="propagate" msg-file="paths-error.txt" code="tr:PATH01" severity="warning">
         <p:with-option name="status-dir-uri" select="$status-dir-uri"/>
         <p:input port="source">
           <p:pipe port="error" step="catch"/>
         </p:input>
       </tr:propagate-caught-error>
+      
       <p:sink/>
+      
       <p:identity name="empty-params">
         <p:input port="source">
           <p:inline>
@@ -190,7 +192,9 @@
           </p:inline>
         </p:input>
       </p:identity>
+      
     </p:catch>
+    
   </p:try>
   
   <tr:store-debug pipeline-step="cascade/paths">
