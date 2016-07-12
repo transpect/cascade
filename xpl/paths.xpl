@@ -59,7 +59,7 @@
     <p:pipe port="result" step="try"/>  
   </p:output>
   <p:serialization port="result" omit-xml-declaration="false" indent="true"/>
-  <p:output port="report">
+  <p:output port="report" primary="false" sequence="true">
     <p:pipe port="report" step="try"/>
   </p:output>
 
