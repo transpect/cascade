@@ -6,6 +6,7 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
   xmlns:tr="http://transpect.io"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:svrl="http://purl.oclc.org/dsdl/svrl" 
   version="1.0"
   name="dtp"
   type="tr:dynamic-transformation-pipeline">
@@ -37,6 +38,10 @@
     <p:documentation>The base name of the .xsl and .xpl files to load, e.g., foo2bar/foo2bar,
       where foo2bar is the name of directories in the customization folders for publisher, series, etc.</p:documentation>
   </p:option>
+  <p:option name="calabash-eval-multidoc-bug" select="'true'">
+    <p:documentation>Work around the issue described here: https://lists.w3.org/Archives/Public/xproc-dev/2014Oct/0003.html
+    and that keeps us from receiving a report port or other ports from cx:eval.</p:documentation>
+  </p:option>
   <p:option name="fallback-xsl" required="false" select="''">
     <p:documentation>Fallback URI to 'default' stylesheet file. Will be loaded when no customization is available 
       in the customization folders for publisher, series, etc. You have to use the URI located in [code repo]/xmlcatalog/catalog.xml
@@ -57,8 +62,13 @@
     <p:documentation>Options that will be passed to the pipeline, in a cx:options document</p:documentation>
   </p:input>
   <p:input port="paths" kind="parameter" primary="true"/>
+  <p:output port="report" sequence="true">
+    <p:documentation>A sequence of either svrl:schematron-report or c:errors documents.</p:documentation>
+    <p:pipe port="report" step="iteration"/>
+  </p:output>
   <p:output port="result" primary="true" sequence="true">
     <p:documentation>A sequence of documents</p:documentation>
+    <p:pipe port="result" step="iteration"/>
   </p:output>
   
   <p:import href="http://xmlcalabash.com/extension/steps/library-1.0.xpl" />
@@ -101,12 +111,36 @@
   
   <p:sink/> 
   
-  <tr:load-cascaded name="pipeline">
+  <tr:load-cascaded name="pipeline0">
     <p:with-option name="filename" select="concat($load, '.xpl')"/>
     <p:with-option name="fallback" select="$fallback-xpl"/>
     <p:with-option name="debug" select="$debug"/>
     <p:with-option name="debug-dir-uri" select="$debug-dir-uri"/>
   </tr:load-cascaded>
+  
+  <p:choose name="pipeline">
+    <p:when test="$calabash-eval-multidoc-bug = 'true'">
+      <p:output port="result" primary="true"/>
+      <p:xslt name="patch-pipeline">
+        <p:with-option name="output-base-uri" select="base-uri(/*)"/>
+        <p:input port="stylesheet">
+          <p:document href="../xsl/calabash-workaround-patch-dtp.xsl"/>
+        </p:input>
+        <p:input port="parameters">
+          <p:empty/>
+        </p:input>
+      </p:xslt>
+      <tr:store-debug name="store-patched-pipeline" extension="xpl">
+        <p:with-option name="active" select="$debug"/>
+        <p:with-option name="base-uri" select="$debug-dir-uri"/>
+        <p:with-option name="pipeline-step" select="string-join(($load, 'patched-for-calabash'), '_')"/>
+      </tr:store-debug>
+    </p:when>
+    <p:otherwise>
+      <p:output port="result" primary="true"/>
+      <p:identity/>
+    </p:otherwise>
+  </p:choose>
   
   <p:try name="validate-pipeline">
     <p:group>
@@ -115,7 +149,7 @@
           <p:document href="http://www.w3.org/TR/xproc/schema/1.0/xproc.rng"/>
         </p:input>
         <p:input port="source">
-          <p:pipe port="result" step="pipeline"></p:pipe>
+          <p:pipe port="result" step="pipeline"/>
         </p:input>
       </p:validate-with-relax-ng>
       <p:sink/>
@@ -171,6 +205,12 @@
   <p:sink/>
 
   <p:for-each name="iteration">
+    <p:output port="result" primary="true" sequence="true">
+      <p:pipe port="result" step="result-and-report"/>
+    </p:output>
+    <p:output port="report" sequence="true">
+      <p:pipe port="report" step="result-and-report"/>
+    </p:output>
     <p:iteration-source>
       <p:pipe port="source" step="dtp"/>
     </p:iteration-source>
@@ -197,9 +237,41 @@
         <p:pipe port="result" step="options"/>
       </p:input>
     </cx:eval>
+
+    <p:unwrap match="/cx:document[@port eq 'result']" name="unwrap-result"/>
     
-    <p:unwrap match="/cx:document[@port eq 'result']"/>
-    <!-- output: a sequence of documents -->
+    <p:choose name="result-and-report">
+      <p:when test="$calabash-eval-multidoc-bug = 'true'">
+        <p:output port="result" sequence="true" primary="true">
+          <p:pipe port="matched" step="split"/>
+        </p:output>
+        <p:output port="report" sequence="true">
+          <p:pipe port="not-matched" step="split"/>
+        </p:output>
+        <p:split-sequence test="not(/c:errors | /svrl:schematron-report)" name="split" initial-only="true">
+          <p:documentation>We just assume in this workaround that all c:errors and svrl:schematron-report documents 
+            belong to the report output port.</p:documentation>
+          <p:input port="source" select="/c:wrapper/*"/>
+        </p:split-sequence>
+        <p:sink/>
+      </p:when>
+      <p:otherwise>
+        <p:output port="result" primary="true" sequence="true">
+          <p:pipe port="result" step="unwrap-result"/>
+        </p:output>
+        <p:output port="report" sequence="true">
+          <p:pipe port="result" step="unwrap-report"/>
+        </p:output>
+        <p:unwrap name="unwrap-report" match="/cx:document[@port eq 'result']">
+          <p:input port="source">
+            <p:pipe port="result" step="eval"/>
+          </p:input>
+        </p:unwrap>
+      </p:otherwise>
+    </p:choose>
+
+    <p:sink/>
+    
   </p:for-each>
     
 </p:declare-step>
