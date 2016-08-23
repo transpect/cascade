@@ -38,10 +38,6 @@
     <p:documentation>The base name of the .xsl and .xpl files to load, e.g., foo2bar/foo2bar,
       where foo2bar is the name of directories in the customization folders for publisher, series, etc.</p:documentation>
   </p:option>
-  <p:option name="calabash-eval-multidoc-bug" select="'true'">
-    <p:documentation>Work around the issue described here: https://lists.w3.org/Archives/Public/xproc-dev/2014Oct/0003.html
-    and that keeps us from receiving a report port or other ports from cx:eval.</p:documentation>
-  </p:option>
   <p:option name="fallback-xsl" required="false" select="''">
     <p:documentation>Fallback URI to 'default' stylesheet file. Will be loaded when no customization is available 
       in the customization folders for publisher, series, etc. You have to use the URI located in [code repo]/xmlcatalog/catalog.xml
@@ -73,6 +69,11 @@
   
   <p:import href="http://xmlcalabash.com/extension/steps/library-1.0.xpl" />
   <p:import href="http://transpect.io/cascade/xpl/load-cascaded.xpl"/>
+
+  <p:variable name="calabash-eval-multidoc-bug" select="'true'[p:system-property('p:product-name') = 'XML Calabash']">
+    <p:documentation>Work around the issue described here: https://lists.w3.org/Archives/Public/xproc-dev/2014Oct/0003.html
+    and that keeps us from receiving a report port or other ports from cx:eval.</p:documentation>
+  </p:variable>
 
   <p:parameters name="consolidate-params">
     <p:input port="parameters">
@@ -118,11 +119,21 @@
     <p:with-option name="debug-dir-uri" select="$debug-dir-uri"/>
   </tr:load-cascaded>
   
+  <p:sink>
+    <p:documentation>Without this sink and the explicit rewiring, there was a spurious:
+    "calabash ERR:Unbound primary output: [output result on pipeline0" error sometimes.</p:documentation>
+  </p:sink>
+  
   <p:choose name="pipeline">
     <p:when test="$calabash-eval-multidoc-bug = 'true'">
       <p:output port="result" primary="true"/>
       <p:xslt name="patch-pipeline">
-        <p:with-option name="output-base-uri" select="base-uri(/*)"/>
+        <p:input port="source">
+          <p:pipe port="result" step="pipeline0"/>
+        </p:input>
+        <p:with-option name="output-base-uri" select="base-uri(/*)">
+          <p:pipe port="result" step="pipeline0"/>
+        </p:with-option>
         <p:input port="stylesheet">
           <p:document href="../xsl/calabash-workaround-patch-dtp.xsl"/>
         </p:input>
@@ -138,7 +149,11 @@
     </p:when>
     <p:otherwise>
       <p:output port="result" primary="true"/>
-      <p:identity/>
+      <p:identity>
+        <p:input port="source">
+          <p:pipe port="result" step="pipeline0"/>
+        </p:input>
+      </p:identity>
     </p:otherwise>
   </p:choose>
   
@@ -174,7 +189,7 @@
         <p:input port="source">
           <p:pipe step="pipeline" port="result"/>  
         </p:input>
-      </p:store>      
+      </p:store>
     </p:catch>
   </p:try>
   
@@ -248,7 +263,7 @@
         <p:output port="report" sequence="true">
           <p:pipe port="not-matched" step="split"/>
         </p:output>
-        <p:split-sequence test="not(/c:errors | /svrl:schematron-report)" name="split" initial-only="true">
+        <p:split-sequence test="not(/c:errors | /svrl:schematron-report)" name="split">
           <p:documentation>We just assume in this workaround that all c:errors and svrl:schematron-report documents 
             belong to the report output port.</p:documentation>
           <p:input port="source" select="/c:wrapper/*"/>

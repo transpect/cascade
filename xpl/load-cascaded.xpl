@@ -55,6 +55,7 @@
       </p:xpath-context>
       <p:when test="replace(base-uri(/*), '^.+/', '') = concat(replace($filename, '^.+/', ''), '.xsl')">
         <p:xslt template-name="main">
+          <p:with-option name="output-base-uri" select="resolve-uri($filename)"/>
           <p:input port="source"><p:empty/></p:input>
           <p:input port="parameters">
             <p:pipe port="paths" step="load-cascaded"/>
@@ -72,7 +73,7 @@
         </p:identity>
       </p:otherwise>
     </p:choose>
-
+    
     <tr:store-debug name="store-debug">
       <p:with-option name="active" select="$debug"/>
       <p:with-option name="base-uri" select="$debug-dir-uri"/>

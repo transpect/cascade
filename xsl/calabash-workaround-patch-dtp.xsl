@@ -27,12 +27,15 @@
       <xsl:apply-templates select="@*, node()"/>
       <xsl:variable name="result-connection" as="element(*)*" 
         select="p:output[@port = ('result', 'report')]/(p:pipe | p:inline)"/>
-      <xsl:if test="not(p:output[@port = 'result']/(p:pipe | p:inline))">
+      <xsl:if test="not(p:output[@port = 'result']/(p:pipe | p:inline))"><!-- last step’s output was primary output -->
         <p:identity name="__I_D_E_N_T_I_T_Y__"/>
+        <p:sink/>
       </xsl:if>
       <p:identity>
         <p:input port="source">
-          <p:pipe port="result" step="__I_D_E_N_T_I_T_Y__"/>
+          <xsl:if test="not(p:output[@port = 'result']/(p:pipe | p:inline))">
+            <p:pipe port="result" step="__I_D_E_N_T_I_T_Y__"/>
+          </xsl:if>
           <xsl:copy-of select="$result-connection"/>
         </p:input>
       </p:identity>
