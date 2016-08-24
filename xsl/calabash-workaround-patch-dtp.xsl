@@ -39,6 +39,7 @@
             <p:pipe port="result" step="__I_D_E_N_T_I_T_Y__"/>
           </xsl:if>
           <xsl:copy-of select="$result-connection"/>
+          <xsl:comment>report connections go here:</xsl:comment>
           <xsl:copy-of select="$report-connection"/>
         </p:input>
       </p:identity>
