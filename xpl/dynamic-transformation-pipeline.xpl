@@ -131,9 +131,9 @@
         <p:input port="source">
           <p:pipe port="result" step="pipeline0"/>
         </p:input>
-        <p:with-option name="output-base-uri" select="base-uri(/*)">
+        <!--<p:with-option name="output-base-uri" select="(base-uri()[normalize-space()], base-uri(/*))[1]">
           <p:pipe port="result" step="pipeline0"/>
-        </p:with-option>
+        </p:with-option>-->
         <p:input port="stylesheet">
           <p:document href="../xsl/calabash-workaround-patch-dtp.xsl"/>
         </p:input>
