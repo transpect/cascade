@@ -4,8 +4,11 @@
   xmlns:p="http://www.w3.org/ns/xproc" 
   xmlns:c="http://www.w3.org/ns/xproc-step"  
   xmlns:cx="http://xmlcalabash.com/ns/extensions" 
+  xmlns:xslo="xslotto"
   exclude-result-prefixes="xs"
   version="2.0">
+  
+  <xsl:namespace-alias stylesheet-prefix="xslo" result-prefix="xsl"/>
   
   <xsl:template match="@* | *">
     <xsl:copy>
@@ -38,14 +41,16 @@
           <xsl:if test="not($result-connection)">
             <p:pipe port="result" step="__I_D_E_N_T_I_T_Y__"/>
           </xsl:if>
-          <xsl:copy-of select="$result-connection"/>
+          <xsl:sequence select="$result-connection"/>
           <xsl:comment>report connections go here:</xsl:comment>
-          <xsl:copy-of select="$report-connection"/>
+          <xsl:sequence select="$report-connection"/>
         </p:input>
       </p:identity>
       <p:wrap-sequence wrapper="c:wrapper"/>
-      <p:add-attribute attribute-name="xml:base" match="/*/*[1]">
-        <p:with-option name="attribute-value" select="base-uri()">
+      <!-- use p:xslt to add the xml:base attribute, since p:add-attribute can reorder existing attributes -->
+      <p:xslt name="add_xml-base_attribute">
+        <p:input port="parameters"><p:empty/></p:input>
+        <p:with-param name="base-uri" select="base-uri()">
           <xsl:choose>
             <xsl:when test="$result-connection">
               <xsl:sequence select="$result-connection"/>
@@ -57,8 +62,24 @@
               <p:pipe port="{$primary-input/@port}" step="{@name}"/>-->
             </xsl:otherwise>
           </xsl:choose>
-        </p:with-option>
-      </p:add-attribute>
+        </p:with-param>
+        <p:input port="stylesheet">
+          <p:inline>
+            <xslo:stylesheet version="2.0">
+              <xslo:param name="base-uri"/>
+              <xslo:template match="/* | /*/*[1]">
+                <xslo:copy>
+                  <xslo:attribute name="xml:base" select="$base-uri"/>
+                  <xslo:apply-templates select="@*, node()" mode="#current"/>
+                </xslo:copy>
+              </xslo:template>
+              <xslo:template match="* | node() | @* | processing-instruction() | comment()" priority="-1">
+                <xslo:sequence select="."/>
+              </xslo:template>
+            </xslo:stylesheet>
+          </p:inline>
+        </p:input>
+      </p:xslt>
     </xsl:copy>
   </xsl:template>
   
