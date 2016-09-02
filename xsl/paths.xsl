@@ -77,7 +77,7 @@
   <xsl:variable name="tr:single-file-content" as="element(tr:content)">
     <!-- content-base-uri will be like: file:/path/to/idml/file.idml → file:/path/to/ --> 
     <content xmlns="http://transpect.io" content-base-uri="{replace($file, '^((.+/)([^/]+/))?.+$', '$2')}" role="work"
-      name-regex="\.+" name="{replace($file, '^(.+/)?([^.]+)(\..+)?$', '$2')}" base="{tr:basename($file)}"
+      name-regex="\.+" name="{replace($file, '^(.+/)?([^.]+)(\..+)?$', '$2')}" basename="{tr:basename($file)}"
       ext="{tr:ext($file)}" stack-pos="1"/>
   </xsl:variable>
   
@@ -322,7 +322,7 @@
 
   <xsl:function name="tr:target-base-name" as="xs:string">
     <xsl:param name="content" as="element(tr:content)"/>
-    <xsl:sequence select="$content/@base"/>
+    <xsl:sequence select="$content/@basename"/>
   </xsl:function>
   
   <xsl:function name="tr:target-subdir" as="xs:string">
