@@ -177,21 +177,41 @@
             <xsl:param name="s9y7-path" as="xs:string?"/>
             <xsl:param name="s9y8-path" as="xs:string?"/>
             <xsl:param name="s9y9-path" as="xs:string?"/>
+            
+             <xsl:function name="tr:load-document-nodes" as="document-node(element(*))?">
+               <xsl:param name="file-uri" as="xs:string"/>
+               <xsl:apply-templates select="doc($file-uri)" mode="add-base">
+                 <xsl:with-param name="base" select="$file-uri"/>
+               </xsl:apply-templates>
+             </xsl:function>
+           
             <xsl:function name="tr:load-docs" as="document-node()*">
               <xsl:param name="filename" as="xs:string"/>
               <xsl:param name="uris" as="xs:string*"/>
               <xsl:if test="exists($uris)">
                 <xsl:if test="doc-available(concat($uris[1], '/', $filename))">
-                  <xsl:sequence select="doc(concat($uris[1], '/', $filename))"/>
+                  <xsl:sequence select="tr:load-document-nodes(concat($uris[1], '/', $filename))"/>
                 </xsl:if>
                 <xsl:sequence select="tr:load-docs($filename, $uris[position() gt 1])"/>
               </xsl:if>
             </xsl:function>
+            
+              <xsl:template match="/*" mode="add-base">
+                <xsl:param name="base" as="xs:string"/>
+                <xsl:document>
+                  <xsl:copy>
+                      <xsl:attribute name="xml:base" select="$base"/>
+                    <xsl:copy-of select="@*, node()"/>
+                  </xsl:copy>
+                </xsl:document>
+              </xsl:template>
+            
             <xsl:variable name="docs" as="document-node()*"
               select="tr:load-docs($filename, ($s9y9-path, $s9y8-path, $s9y7-path, $s9y6-path, $s9y5-path, $s9y4-path, $s9y3-path, $s9y2-path, $s9y1-path))"/>
+            
             <xsl:template name="main">
               <xsl:for-each select="if ($order = 'most-specific-first') then reverse($docs) else $docs">
-                <xsl:result-document href="{base-uri(/*)}#">
+                <xsl:result-document href="{concat(base-uri(/*), position())}">
                   <xsl:sequence select="."/>
                 </xsl:result-document>
               </xsl:for-each>
