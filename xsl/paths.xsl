@@ -97,6 +97,9 @@
     <xsl:if test="$parse-file-name[name() = 'base'][matches(., '^file:')]">
       <xsl:message select="'WARNING: ', string($parse-file-name[name() = 'base']), ' is not a base name, but a full uri. Please check your tr:parse-file-name() override.'"/>
     </xsl:if>
+    <xsl:if test="not(/*/self::tr:conf)">
+      <xsl:message select="'Empty or no conf element. Please supply config file.'" terminate="yes"/>
+    </xsl:if>
     <xsl:variable name="prequalify-matching-clades" as="element(tr:conf)">
       <xsl:apply-templates select="/" mode="tr:prequalify-matching-clades">
         <xsl:with-param name="clade-name-value-pairs" as="attribute(*)*" tunnel="yes">
