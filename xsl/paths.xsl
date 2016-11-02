@@ -61,7 +61,8 @@
   <xsl:param name="cwd" as="xs:string?"/>
   <xsl:param name="pipeline" as="xs:string?"/><!-- of declarative use only; will probably not be used when processing the content -->
   <xsl:param name="progress" as="xs:string?"/>
-  <xsl:param name="progress-to-stdout" as="xs:string?"/>
+  <xsl:param name="progress-to-stdout" as="xs:string?"/>  
+  <xsl:param name="ruby-version" as="xs:string?"/>
 
   <xsl:output indent="yes"/>
 
@@ -437,6 +438,9 @@
       <c:param name="file" value="{$file}"/>
       <c:param name="ext" value="{($all-atts[name() = 'ext'], tr:ext($file))[1]}"/>
       <c:param name="basename" value="{tr:basename($file)}"/>
+    </xsl:if>
+    <xsl:if test="$ruby-version">
+      <c:param name="ruby-version" value="{$ruby-version}"/>
     </xsl:if>
   </xsl:template>
 
