@@ -43,6 +43,11 @@
     As a second input document, the result of calling svn info -\-xml may be supplied.
     It will be used for the param named transpect-project-uri 
 
+    In order to include parameters that are passed by the invoking pipeline, the c:param-set document
+    of this pipeline is passed to this xsl as the 3rd source document. 
+    It will include this param-set’s parameters in the result document (unless these parameters
+    have been newly created with possibly different values by this xsl).
+
   -->
 
   <!-- These parameters need to be given only if this stylesheet is used for
@@ -62,7 +67,6 @@
   <xsl:param name="pipeline" as="xs:string?"/><!-- of declarative use only; will probably not be used when processing the content -->
   <xsl:param name="progress" as="xs:string?"/>
   <xsl:param name="progress-to-stdout" as="xs:string?"/>  
-  <xsl:param name="ruby-version" as="xs:string?"/>
 
   <xsl:output indent="yes"/>
 
@@ -288,10 +292,11 @@
         <c:param name="s9y{$s9y}-path" value="{tr:resolve-uri-by-catalog($tr:common-path, $tr:catalog)}"/>
         <xsl:next-match/>
         <!-- They’re at the end which means that they will override even the most specific 
-          conf param. Typically they’ll be command-line params. -->
+          conf param. Typically they’ll be params that stem from parsing command line options. -->
         <xsl:call-template name="tr:other-params"/>
       </xsl:variable>
-      <xsl:for-each-group select="$prelim" group-by="@name">
+      <xsl:variable name="param-document-params" as="element(c:param)*" select="collection()/c:param-set/c:param"/>
+      <xsl:for-each-group select="$prelim, $param-document-params[not(@name = $prelim/@name)]" group-by="@name">
         <xsl:sort select="@name"/>
         <xsl:sequence select="current-group()[last()]"/>
       </xsl:for-each-group>
@@ -438,9 +443,6 @@
       <c:param name="file" value="{$file}"/>
       <c:param name="ext" value="{($all-atts[name() = 'ext'], tr:ext($file))[1]}"/>
       <c:param name="basename" value="{tr:basename($file)}"/>
-    </xsl:if>
-    <xsl:if test="$ruby-version">
-      <c:param name="ruby-version" value="{$ruby-version}"/>
     </xsl:if>
   </xsl:template>
 

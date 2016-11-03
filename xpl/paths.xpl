@@ -143,6 +143,7 @@
         <p:input port="source">
           <p:pipe step="paths" port="conf"/>
           <p:pipe port="result" step="svn-info"/>
+          <p:pipe port="params" step="paths"/>
         </p:input>
         <p:input port="stylesheet">
           <p:pipe step="paths" port="stylesheet"/>
