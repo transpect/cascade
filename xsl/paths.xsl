@@ -291,12 +291,11 @@
         <c:param name="s9y{$s9y}-path-canonical" value="{tr:reverse-resolve-uri-by-catalog($tr:common-path, $tr:catalog)}"/>
         <c:param name="s9y{$s9y}-path" value="{tr:resolve-uri-by-catalog($tr:common-path, $tr:catalog)}"/>
         <xsl:next-match/>
-        <!-- They’re at the end which means that they will override even the most specific 
-          conf param. Typically they’ll be params that stem from parsing command line options. -->
         <xsl:call-template name="tr:other-params"/>
       </xsl:variable>
+      <!-- These are the command line overrides: --> 
       <xsl:variable name="param-document-params" as="element(c:param)*" select="collection()/c:param-set/c:param"/>
-      <xsl:for-each-group select="$prelim, $param-document-params[not(@name = $prelim/@name)]" group-by="@name">
+      <xsl:for-each-group select="$prelim[not(@name = $param-document-params/@name)], $param-document-params" group-by="@name">
         <xsl:sort select="@name"/>
         <xsl:sequence select="current-group()[last()]"/>
       </xsl:for-each-group>
