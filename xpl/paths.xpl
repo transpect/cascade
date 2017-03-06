@@ -135,6 +135,7 @@
         </p:with-param>
         <p:with-param name="pipeline" select="$pipeline"/>
         <p:with-param name="debug-dir-uri" select="$debug-dir-uri"/>
+        <p:with-param name="status-dir-uri" select="$status-dir-uri"/>
         <p:with-param name="progress" select="$progress"/>
         <p:with-param name="progress-to-stdout" select="$progress-to-stdout"/>
         <p:with-param name="cwd" select="/*/@cwd">

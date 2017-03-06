@@ -56,6 +56,7 @@
     have the same name as the stylesheet params. -->
   <xsl:param name="debug" as="xs:string?" select="'no'"/>
   <xsl:param name="debug-dir-uri" as="xs:string?" select="'debug'"/>
+  <xsl:param name="status-dir-uri" as="xs:string?" select="'status'"/>
   <xsl:param name="interface-language" as="xs:string?"/>
 
   <!-- A comma and/or whitespace separated string containing name=value pairs
@@ -418,6 +419,7 @@
     <!-- Disable XSLT-based debugging (whether XProc-based debugging takes place is determined by the XProc debug option, not by a param): -->
     <c:param name="debug" value="'no'"/>
     <c:param name="debug-dir-uri" value="{$debug-dir-uri}"/>
+    <c:param name="status-dir-uri" value="{$status-dir-uri}"/>
     <c:param name="srcpaths" value="yes"/>
     <c:param name="pipeline" value="{$pipeline}"/>
     <c:param name="_params-given-in-clades-string" value="{tr:diagnostic-string($parse-clades-string)}"/>

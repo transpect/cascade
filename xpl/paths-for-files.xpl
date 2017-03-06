@@ -16,6 +16,7 @@
   <p:option name="filenames" required="true"/>
   <p:option name="debug" required="false" select="'no'"/>
   <p:option name="debug-dir-uri" required="false" select="resolve-uri('debug')"/>
+  <p:option name="status-dir-uri" required="false" select="resolve-uri('status')"/>
   <p:option name="fail-on-error" select="'false'"/>
   
   <p:input port="conf" primary="true">
@@ -65,6 +66,7 @@
       <p:with-option name="file" select="/*/@name"/>
       <p:with-option name="debug" select="$debug"/>  
       <p:with-option name="debug-dir-uri" select="$debug-dir-uri"/>
+      <p:with-option name="status-dir-uri" select="$status-dir-uri"/>
       <p:input port="stylesheet">
         <p:pipe port="result" step="import-paths-xsl"/>
       </p:input>
