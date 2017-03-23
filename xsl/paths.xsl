@@ -404,15 +404,30 @@
     <xsl:attribute name="base" select="$basename"/>
   </xsl:function>
 
+  <xsl:function name="tr:base-ext" as="xs:string+">
+    <xsl:param name="filename" as="xs:string"/>
+    <!-- expected input: file uris or relative names, ending in, for example:
+      …/foo.bar.baz, …/foo., …/foo.bar, …/foo.bar/  
+    Output for the examples, in the form ('basename', 'ext'):
+      ('foo', 'bar.baz'), ('foo.', ''), ('foo', 'bar'), ('foo', 'bar') --> 
+    <xsl:analyze-string select="tokenize($filename, '/')[normalize-space()][last()]" regex="^(.+?)\.(.+)$">
+      <xsl:matching-substring>
+        <xsl:sequence select="regex-group(1), regex-group(2)"/>
+      </xsl:matching-substring>
+      <xsl:non-matching-substring>
+        <xsl:sequence select="., ''"/>
+      </xsl:non-matching-substring>
+    </xsl:analyze-string>
+  </xsl:function>
+
   <xsl:function name="tr:basename" as="xs:string">
     <xsl:param name="filename" as="xs:string"/>
-    <xsl:sequence select="replace(tokenize($filename, '/')[last()], '\.[^.]+$', '')"/>
+    <xsl:sequence select="tr:base-ext($filename)[1]"/>
   </xsl:function>
 
   <xsl:function name="tr:ext" as="xs:string">
-    <!-- Example: file:/path/base.hub.xml → 'hub.xml' -->
     <xsl:param name="filename" as="xs:string"/>
-    <xsl:sequence select="replace(tokenize($filename, '/')[last()][matches(., '\.[^.]+$')], '^.*\.([^.]+)$', '$1')"/>
+    <xsl:sequence select="tr:base-ext($filename)[2]"/>
   </xsl:function>
 
   <xsl:template name="tr:other-params">
