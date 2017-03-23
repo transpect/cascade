@@ -406,13 +406,13 @@
 
   <xsl:function name="tr:basename" as="xs:string">
     <xsl:param name="filename" as="xs:string"/>
-    <xsl:sequence select="replace($filename, '^(.+/)?([^./]+)(\.[a-z0-9]+)*?/*$', '$2', 'i')"/>
+    <xsl:sequence select="replace(tokenize($filename, '/')[last()], '\.[^.]+$', '')"/>
   </xsl:function>
 
   <xsl:function name="tr:ext" as="xs:string">
     <!-- Example: file:/path/base.hub.xml → 'hub.xml' -->
     <xsl:param name="filename" as="xs:string"/>
-    <xsl:sequence select="replace($filename, '^.+?(\.([^/]+))?/*$', '$2')"/>
+    <xsl:sequence select="replace(tokenize($filename, '/')[last()][matches(., '\.[^.]+$')], '^.*\.([^.]+)$', '$1')"/>
   </xsl:function>
 
   <xsl:template name="tr:other-params">
