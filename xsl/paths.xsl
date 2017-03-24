@@ -121,11 +121,11 @@
     </xsl:result-document>
     <xsl:variable name="matching-clades-candidates" as="element(tr:clade)*"
       select="$prequalify-matching-clades//tr:clade[@name]
-                                                          [tr:content[@matches = 'maybe']]
-                                                          [every $a in ancestor-or-self::tr:clade[@name] satisfies ($a/@matches = 'maybe')]
-                                                          [some $d in descendant::tr:content[every $a in (ancestor::tr:clade intersect current())
-                                                                                                    satisfies $a/@matches = 'maybe']
-                                                           satisfies ($d/@matches = 'maybe')]"/>
+                                                   [tr:content[@matches = 'maybe']]
+                                                   [every $a in ancestor-or-self::tr:clade[@name] satisfies ($a/@matches = 'maybe')]
+                                                   [some $d in descendant::tr:content[every $a in (ancestor::tr:clade intersect current())
+                                                                                      satisfies $a/@matches = 'maybe']
+                                                    satisfies ($d/@matches = 'maybe')]"/>
     <!-- This will select only the most specifically matching candidates: -->
     <xsl:variable name="almost-matching-clades" as="element(tr:clade)*"
       select="$matching-clades-candidates[empty(descendant::tr:clade intersect $matching-clades-candidates)]"/>
