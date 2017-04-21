@@ -196,15 +196,21 @@
               </xsl:if>
             </xsl:function>
             
-              <xsl:template match="/*" mode="add-base">
-                <xsl:param name="base" as="xs:string"/>
-                <xsl:document>
-                  <xsl:copy>
-                      <xsl:attribute name="xml:base" select="$base"/>
-                    <xsl:copy-of select="@*, node()"/>
-                  </xsl:copy>
-                </xsl:document>
-              </xsl:template>
+            <xsl:template match="/*" mode="add-base">
+              <xsl:param name="base" as="xs:string"/>
+              <xsl:document>
+                <xsl:copy>
+                  <xsl:attribute name="xml:base" select="$base"/>
+                  <xsl:apply-templates select="@*, node()" mode="identity"/>
+                </xsl:copy>
+              </xsl:document>
+            </xsl:template>
+            
+            <xsl:template match="@*|node()" mode="identity">
+              <xsl:copy>
+                <xsl:apply-templates select="@*, node()" mode="identity"/>
+              </xsl:copy>
+            </xsl:template>
             
             <xsl:variable name="docs" as="document-node()*"
               select="tr:load-docs($filename, ($s9y9-path, $s9y8-path, $s9y7-path, $s9y6-path, $s9y5-path, $s9y4-path, $s9y3-path, $s9y2-path, $s9y1-path))"/>
