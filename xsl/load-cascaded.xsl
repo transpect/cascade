@@ -153,9 +153,18 @@
         <xsl:if test="$set-xml-base-attribute eq 'yes'">
           <xsl:attribute name="xml:base" select="$base"/>
         </xsl:if>
-        <xsl:copy-of select="@*, node()"/>
+        <!-- added due to compatibility with existdb. we experience some strange errors when running xslt in existdb -->
+        <!--<xsl:copy-of select="@*, node()"/>-->
+        <xsl:apply-templates select="@*, node()" mode="#current"/>
       </xsl:copy>
     </xsl:document>
+  </xsl:template>
+
+  <!-- added due to compatibility with existdb. -->
+  <xsl:template match="*|@*" mode="add-base">
+    <xsl:copy>
+      <xsl:apply-templates select="@*, node()" mode="#current"/>
+    </xsl:copy>
   </xsl:template>
 
 </xsl:stylesheet>
