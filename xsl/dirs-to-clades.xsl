@@ -41,8 +41,9 @@
         ancestor::c:directory[c:param-set/c:param[@name eq 'role']]/c:param-set/c:param[@name eq 'clade-role'][1])[1]" as="element(c:param)?"/>
       <xsl:attribute name="role" select="if($inherited-clade-role-attribute) then $inherited-clade-role-attribute/@value else 'default'"/>
       <!-- unfortunately, content element is necessary for paths.xsl -->
+      <xsl:apply-templates select="c:param"/>
       <content role="work"/>
-      <xsl:apply-templates/>
+      <xsl:apply-templates select="node() except c:param"/>
     </clade>
   </xsl:template>
   
