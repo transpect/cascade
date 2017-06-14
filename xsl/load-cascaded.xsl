@@ -6,7 +6,7 @@
   xmlns:tr="http://transpect.io" 
   exclude-result-prefixes="xs tr" 
   version="2.0">
-  
+
   <xsl:param name="interface-language" select="'en'" as="xs:string"/>
   <xsl:param name="s9y1-path" as="xs:string?"/>
   <xsl:param name="s9y2-path" as="xs:string?"/>
@@ -103,8 +103,14 @@
     <xsl:param name="file-name" as="xs:string"/>
     <xsl:variable name="full-name" select="string(resolve-uri($file-name, $base-paths[1]))" as="xs:string"/>
     <xsl:variable name="lang" select="replace($interface-language, '^([a-z]+).*$', '$1')"/>
-    <xsl:variable name="l10n-name" select="replace($full-name, '(\.[^.]+)$', concat('.', $lang, '$1'))" as="xs:string"/>
-<!--    <xsl:message select="'L10N ', $l10n-name"/>-->
+    <xsl:variable name="l10n-name" 
+      select="if ($base-paths[1] = $file-name) (: fallback case :)
+              then $file-name
+              else replace(
+                     $full-name, 
+                     '(\.[^.]+)$', 
+                     concat('.', $lang, '$1')
+                   )" as="xs:string"/>
     <xsl:choose>
       <xsl:when test="doc-available($l10n-name)">
         <xsl:message>load-cascaded: using <xsl:value-of select="$l10n-name"/></xsl:message>
