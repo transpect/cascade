@@ -29,7 +29,7 @@
   
   <!-- variables-->
 
-  <xsl:variable name="catalog" as="document-node(element(cat:catalog))?" select="/"/>
+  <xsl:variable name="catalog" as="document-node(element(cat:catalog))?" select="collection()[cat:catalog]"/>
 
   <xsl:variable name="catalog-resolved-fallback" as="xs:string" select="tr:resolve-uri-by-catalog($fallback, $catalog)"/>
 

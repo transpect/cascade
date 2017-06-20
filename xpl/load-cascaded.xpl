@@ -30,6 +30,9 @@
     <p:option name="debug-dir-uri" />
 
     <p:input port="paths" kind="parameter" primary="true"/>
+    <p:input port="source" primary="true" sequence="true">
+      <p:empty/>
+    </p:input>
     <p:input port="catalog" sequence="true">
       <p:document href="http://this.transpect.io/xmlcatalog/catalog.xml"/>
     </p:input>
