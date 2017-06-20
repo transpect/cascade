@@ -31,6 +31,8 @@
 
     <p:input port="paths" kind="parameter" primary="true"/>
     <p:input port="source" primary="true" sequence="true">
+      <p:documentation>If we don’t have this dummy primary port, the document(s) on the default readable port may 
+        replace the catalog on the catalog port.</p:documentation>
       <p:empty/>
     </p:input>
     <p:input port="catalog" sequence="true">
