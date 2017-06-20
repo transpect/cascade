@@ -30,10 +30,15 @@
     <p:option name="debug-dir-uri" />
 
     <p:input port="paths" kind="parameter" primary="true"/>
+    <p:input port="catalog" sequence="true">
+      <p:document href="http://this.transpect.io/xmlcatalog/catalog.xml"/>
+    </p:input>
     <p:output port="result" primary="true"/>
 
     <p:xslt template-name="main" name="load-cascaded-xsl">
-      <p:input port="source"><p:empty/></p:input>
+      <p:input port="source">
+        <p:pipe port="catalog" step="load-cascaded"/>
+      </p:input>
       <p:input port="parameters">
         <p:pipe port="paths" step="load-cascaded"/>
       </p:input>

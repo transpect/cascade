@@ -3,9 +3,13 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:c="http://www.w3.org/ns/xproc-step"
+  xmlns:cat="urn:oasis:names:tc:entity:xmlns:xml:catalog"
   xmlns:tr="http://transpect.io" 
   exclude-result-prefixes="xs tr" 
   version="2.0">
+
+  <xsl:import href="http://transpect.io/xslt-util/xslt-based-catalog-resolver/xsl/resolve-uri-by-catalog.xsl"/>
+  <xsl:param name="cat:missing-next-catalogs-warning" as="xs:string" select="'no'"/>
 
   <xsl:param name="interface-language" select="'en'" as="xs:string"/>
   <xsl:param name="s9y1-path" as="xs:string?"/>
@@ -25,6 +29,10 @@
   
   <!-- variables-->
 
+  <xsl:variable name="catalog" as="document-node(element(cat:catalog))?" select="/"/>
+
+  <xsl:variable name="catalog-resolved-fallback" as="xs:string" select="tr:resolve-uri-by-catalog($fallback, $catalog)"/>
+
   <xsl:variable name="cascade" as="xs:string*"
     select="($s9y1-path, $s9y2-path, $s9y3-path, $s9y4-path, $s9y5-path, $s9y6-path, $s9y7-path, $s9y8-path, $s9y9-path)"/>
 
@@ -35,7 +43,7 @@
       <xsl:message>load-cascaded: the cascade is empty. Are you supplying a paths document?</xsl:message>
     </xsl:if>
     <xsl:sequence select="if (empty($cascade))
-                          then tr:load($fallback, $fallback) (: doc($fallback) :) (:didn't work well because we need tr:load to add an appropriate @xml:base :)
+                          then tr:load($catalog-resolved-fallback, $catalog-resolved-fallback) (: doc($fallback) :) (:didn't work well because we need tr:load to add an appropriate @xml:base :)
                           else tr:load($cascade, $filename)"/>
   </xsl:template>
 
@@ -49,7 +57,7 @@
     </xsl:if>
     <xsl:variable name="fallback-directory"
       select="if($fallback ne '') 
-              then string-join(tokenize($fallback, '/')[position() != last()], '/')
+              then string-join(tokenize($catalog-resolved-fallback, '/')[position() != last()], '/')
               else ()"/>
     <tr:results>
       <xsl:for-each select="for $i in $cascade return concat($i, $directory-from-filename), $fallback-directory">
@@ -126,9 +134,9 @@
       </xsl:when>
       <xsl:when test="count($base-paths) eq 1">
         <xsl:choose>
-          <xsl:when test="$fallback ne '' and doc-available($fallback)">
-            <xsl:message>load-cascaded: using fallback <xsl:value-of select="$fallback"/></xsl:message>
-            <xsl:sequence select="tr:load-document-nodes(xs:anyURI($fallback))"/>
+          <xsl:when test="$fallback ne '' and doc-available($catalog-resolved-fallback)">
+            <xsl:message>load-cascaded: using fallback <xsl:value-of select="$catalog-resolved-fallback"/></xsl:message>
+            <xsl:sequence select="tr:load-document-nodes(xs:anyURI($catalog-resolved-fallback))"/>
           </xsl:when>
           <xsl:otherwise>
             <xsl:message terminate="{$required}"> load-cascaded: no file available, <xsl:value-of select="$file-name"/>
