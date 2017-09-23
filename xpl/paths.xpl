@@ -50,7 +50,7 @@
       This stylesheet will most probably import the default stylesheet.</p:documentation>
     <p:document href="../xsl/paths.xsl"/>
   </p:input>
-  <p:input port="params" sequence="true" primary="false">
+  <p:input port="params" sequence="true" kind="parameter">
     <p:documentation>Additional parameters for the path calculation stylesheet can be submitted over this port.</p:documentation>
     <p:empty/>
   </p:input>
