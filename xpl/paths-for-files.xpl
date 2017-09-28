@@ -73,6 +73,9 @@
       <p:input port="conf">
         <p:pipe port="conf" step="paths-for-files"/>
       </p:input>
+      <p:input port="params">
+        <p:empty/>
+      </p:input>
     </tr:paths>
     <tr:file-uri name="file-uri">
       <p:with-option name="filename" select="/c:param-set/c:param[@name eq 'repo-href-local']/@value"/>
