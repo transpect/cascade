@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
-  xmlns:c="http://www.w3.org/ns/xproc-step" 
+  xmlns:c="http://www.w3.org/ns/xproc-step"
+  xmlns:tr="http://transpect.io"
   xmlns="http://transpect.io"
   exclude-result-prefixes="xs c"
   version="2.0">
@@ -43,10 +44,39 @@
       <xsl:attribute name="role" select="if($inherited-clade-role-attribute) then $inherited-clade-role-attribute/@value else 'default'"/>
       <!-- unfortunately, content element is necessary for paths.xsl -->
       <xsl:apply-templates select="c:param-set/c:param"/>
-      <content role="work"/>
+      <xsl:sequence select="c:create-content(c:param-set/c:param[@name eq 'content-roles']/@value, 0)"/>
       <xsl:apply-templates select="node() except c:param-set"/>
     </clade>
   </xsl:template>
+  
+  <xsl:function name="c:create-content" as="element(tr:content)">
+    <!-- creates nested content elements based on a whitespace separated list of names, e.g.
+       
+       <c:param name="content-roles" value="volume issue work"/>
+       
+       is converted to:
+       
+       <content role="volume">
+          <content role="issue">
+            <content role="work"/>
+          </content>
+        </content>
+  -->
+    <xsl:param name="content-roles" as="xs:string?"/><!-- whitespace-separated list of content roles, e.g. 'publisher series work' -->
+    <xsl:param name="index" as="xs:integer"/><!-- start index should be zero -->
+    <xsl:choose>
+      <xsl:when test="tokenize($content-roles, '\s')[$index + 1]">
+        <content role="{tokenize($content-roles, '\s')[$index + 1]}">
+          <xsl:if test="tokenize($content-roles, '\s')[$index + 2]">
+            <xsl:sequence select="c:create-content($content-roles, $index + 1)"/>
+          </xsl:if>
+        </content>
+      </xsl:when>
+      <xsl:otherwise>
+        <content role="work"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:function>
   
   <xsl:template match="c:param">
     <param name="{@name}" value="{@value}"/>
