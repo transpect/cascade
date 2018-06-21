@@ -343,7 +343,7 @@
     <xsl:sequence select="string(.)"/>
   </xsl:template>
 
-  <xsl:template match="@ext[. = ('png', 'jpg')]" mode="tr:ext-to-target-subdir">
+  <xsl:template match="@ext[. = ('png', 'jpg', 'jpeg')]" mode="tr:ext-to-target-subdir">
     <xsl:sequence select="if (../@base[matches(., '_COVER$')]) then 'images/cover' else 'images'"/>
   </xsl:template>
 
