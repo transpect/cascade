@@ -8,11 +8,17 @@
   type="tr:get-clades-from-dirs">
 
   <p:documentation xmlns="http://www.w3.org/1999/xhtml">
-    This step converts a transpect clades document from the output
+    <p>This step converts a transpect clades document from the output
     of <code>tr:directory-loop</code>. The clades document can be used
-    as input for the <code>tr:paths</code> step. 
+    as input for the <code>tr:paths</code> step.</p>
+    <p>Parameter sets can be stored as <code>params.xml</code> in the corresponding 
+    directory. There are predefined parameters which are used to control how the 
+    clades are generated.</p>
+    <pre><code>&lt;c:param-set xmlns:c="http://www.w3.org/ns/xproc-step">
+&lt;c:param name="exclude-filter" value="'(xsl|xpl|schematron)'"/>&lt;-- exclude directories from cascade -->
+&lt;c:param name="clade-role" value="global"/>&lt;-- assign a specific clade role to the directory -->
+&lt;/c:param-set></code></pre>
   </p:documentation>
-  
   
   <p:input port="params">
     <p:documentation xmlns="http://www.w3.org/1999/xhtml">
@@ -33,11 +39,25 @@
     </p:documentation>
   </p:output>
   
+  <p:option name="resolve-params" select="'yes'">
+    <p:documentation xmlns="http://www.w3.org/1999/xhtml">
+      <p>Whether parameter references in parameters should be resolved, e.g.</p>
+      <pre><code>&lt;c:param name="isbn" value="(97[8|9])\d{10}"/>
+&lt;c:param name="book-id" value="book_{$isbn}"/>  
+      </code></pre>
+      <p>Resolving the parameter <code>{$isbn}</code> above, would lead to this result:</p>
+      <pre><code>&lt;c:param name="isbn" value="(97[8|9])\d{10}"/>
+&lt;c:param name="book-id" value="book_((97[8|9])\d{10})"/>  
+      </code></pre>
+    </p:documentation>
+  </p:option>
+  
   <p:option name="debug" select="'yes'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>  
   <p:option name="status-dir-uri" select="concat($debug-dir-uri, '/status')"/>
   
   <p:import href="directory-loop.xpl"/>
+  <p:import href="http://transpect.io/xproc-util/resolve-params/xpl/resolve-params.xpl"/>
   <p:import href="http://transpect.io/xproc-util/simple-progress-msg/xpl/simple-progress-msg.xpl"/>
   <p:import href="http://transpect.io/xproc-util/store-debug/xpl/store-debug.xpl"/>
     
@@ -62,12 +82,27 @@
     <p:with-option name="exclude-filter" select="/c:param-set/c:param[@name eq 'exclude-filter']/@value"/>
   </tr:directory-loop>
   
+  <p:choose>
+    <p:when test="$resolve-params = ('yes', 'true')">
+      
+      <p:viewport match="c:param-set" name="viewport-on-params">
+        <tr:resolve-params name="resolve-params"/>
+      </p:viewport>
+      
+    </p:when>
+    <p:otherwise>
+      
+      <p:identity/>
+      
+    </p:otherwise>
+  </p:choose>
+  
   <tr:store-debug pipeline-step="cascade/dirs-and-params">
     <p:with-option name="active" select="$debug"/>
     <p:with-option name="base-uri" select="$debug-dir-uri"/>
   </tr:store-debug>
   
-  <p:xslt>
+  <p:xslt name="dirs-to-clades-xslt">
     <p:input port="stylesheet">
       <p:document href="../xsl/dirs-to-clades.xsl"/>
     </p:input>
