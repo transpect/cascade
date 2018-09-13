@@ -16,7 +16,7 @@
   <p:option name="filenames" required="true"/>
   <p:option name="debug" required="false" select="'no'"/>
   <p:option name="debug-dir-uri" required="false" select="resolve-uri('debug')"/>
-  <p:option name="status-dir-uri" required="false" select="resolve-uri('status')"/>
+  <p:option name="status-dir-uri" required="false" select="'status?enabled=false'"/>
   <p:option name="fail-on-error" select="'false'"/>
   
   <p:input port="conf" primary="true">

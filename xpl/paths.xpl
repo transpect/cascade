@@ -23,7 +23,7 @@
   
   <p:option name="debug" select="'no'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>
-  <p:option name="status-dir-uri" select="'status'"/>
+  <p:option name="status-dir-uri" select="'status?enabled=false'"/>
   
   <p:option name="interface-language" select="'en'"/>
   <p:option name="clades" select="''">
