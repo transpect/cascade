@@ -7,7 +7,8 @@
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:tr="http://transpect.io"
   version="1.0"
-  name="paths-for-files">
+  name="paths-for-files"
+  type="tr:paths-for-files">
   
   <p:documentation>Will calculate the content repository locations for a space separated
   sequence of flat filenames. The filenames must adhere to the naming conventions, e.g.,
