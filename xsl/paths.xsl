@@ -425,9 +425,13 @@
     <xsl:sequence select="tr:base-ext($filename)[1]"/>
   </xsl:function>
 
-  <xsl:function name="tr:ext" as="xs:string">
+  <xsl:function name="tr:ext" as="xs:string?">
     <xsl:param name="filename" as="xs:string"/>
-    <xsl:sequence select="tr:base-ext($filename)[2]"/>
+    <xsl:variable name="ext" as="xs:string?" select="tr:base-ext($filename)[2]"/>
+    <xsl:if test="not(normalize-space($ext))">
+      <xsl:message select="'Empty tr:ext() result for ''', $filename, ''''"/>
+    </xsl:if>
+    <xsl:sequence select="$ext"/>
   </xsl:function>
 
   <xsl:template name="tr:other-params">
