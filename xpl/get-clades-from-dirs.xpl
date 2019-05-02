@@ -82,11 +82,61 @@
     <p:with-option name="exclude-filter" select="/c:param-set/c:param[@name eq 'exclude-filter']/@value"/>
   </tr:directory-loop>
   
+  <tr:store-debug pipeline-step="cascade/directory-loop">
+    <p:with-option name="active" select="$debug"/>
+    <p:with-option name="base-uri" select="$debug-dir-uri"/>
+  </tr:store-debug>
+  
   <p:choose>
     <p:when test="$resolve-params = ('yes', 'true')">
       
+      <!-- expand all parameter sets, e.g. add parameters from upper levels (in scope) -->
+      
+      <p:xslt>
+        <p:input port="stylesheet">
+          <p:inline>
+            <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
+              <xsl:template match="c:param-set">
+                <xsl:variable name="param-sets-in-scope" 
+                  select="parent::c:directory/ancestor::c:directory/c:param-set" as="element(c:param-set)*"/>
+                <xsl:copy>
+                  <xsl:apply-templates select="@*"/>
+                  <xsl:sequence select="tr:expand-param-set(c:param, $param-sets-in-scope)"/>  
+                </xsl:copy>
+              </xsl:template>
+              
+              <xsl:function name="tr:expand-param-set">
+                <xsl:param name="current-params" as="element(c:param)+"/>
+                <xsl:param name="param-sets-in-scope" as="element(c:param-set)*"/>
+                <xsl:choose>
+                  <xsl:when test="count($param-sets-in-scope) gt 0">        
+                    <xsl:variable name="new-params" select="$param-sets-in-scope[1]/c:param[not(@name = $current-params/@name)]"/>
+                    <xsl:sequence select="tr:expand-param-set(($current-params, $new-params), $param-sets-in-scope[not(position() eq 1)])"/>
+                  </xsl:when>
+                  <xsl:otherwise>
+                    <xsl:sequence select="$current-params"/>
+                  </xsl:otherwise>
+                </xsl:choose>
+              </xsl:function>
+              
+              <xsl:template match="@*|*">
+                <xsl:copy>
+                  <xsl:apply-templates select="@*, node()"/>
+                </xsl:copy>
+              </xsl:template>
+              
+            </xsl:stylesheet>
+          </p:inline>
+        </p:input>
+        <p:input port="parameters">
+          <p:empty/>
+        </p:input>
+      </p:xslt>
+      
       <p:viewport match="c:param-set" name="viewport-on-params">
+        
         <tr:resolve-params name="resolve-params"/>
+        
       </p:viewport>
       
     </p:when>
