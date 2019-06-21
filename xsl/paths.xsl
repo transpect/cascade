@@ -315,9 +315,19 @@
     <c:param name="s9y{$s9y}-path-canonical" value="{tr:reverse-resolve-uri-by-catalog($path, $tr:catalog)}"/>
     <c:param name="s9y{$s9y}" value="{@name}"/>
     <xsl:if test="$s9y = 1">
-      <xsl:variable name="href" select="tr:href-by-content-clade(.)"/>
+      <xsl:variable name="href" select="tr:href-by-content-clade(.)" as="xs:string"/>
+      <xsl:variable name="local-dir-href" as="xs:string" select="tr:resolve-uri-by-catalog($path, $tr:catalog)"/>
+      <xsl:variable name="content-dir-overrides" as="xs:string" select="replace($local-dir-href, '^(.+?)(/+)?$', '$1/override-params.xml')"/>
       <c:param name="repo-href-local" value="{tr:resolve-uri-by-catalog($href, $tr:catalog)}"/>
       <c:param name="repo-href-canonical" value="{$href}"/>
+      <xsl:if test="doc-available($content-dir-overrides)">
+        <xsl:for-each select="doc($content-dir-overrides)/c:param-set/c:param">
+          <xsl:copy>
+            <xsl:copy-of select="@*, node()"/>
+              <xsl:comment select="'Loaded from content-specific override file ', $content-dir-overrides, ':'"/>
+          </xsl:copy>
+        </xsl:for-each>
+      </xsl:if>
     </xsl:if>
     <xsl:apply-templates select="tr:param | tr:clade | tr:content" mode="#current"/>
   </xsl:template>
