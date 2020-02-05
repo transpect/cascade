@@ -38,7 +38,8 @@
     <p:documentation>The base name of the .xsl and .xpl files to load, e.g., foo2bar/foo2bar,
       where foo2bar is the name of directories in the customization folders for publisher, series, etc.</p:documentation>
   </p:option>
-  <p:option name="fallback-xsl" required="false" select="''">
+  <p:option name="fallback-xsl" required="false" 
+    select="'http://transpect.io/cascade/xsl/dynamic-transformation-identity-fallback.xsl'">
     <p:documentation>Fallback URI to 'default' stylesheet file. Will be loaded when no customization is available 
       in the customization folders for publisher, series, etc. You have to use the URI located in [code repo]/xmlcatalog/catalog.xml
       together wie the path to the stylesheet. Example (evolve-hub): http://transpect.io/evolve-hub/xsl/evolve-hub.xsl</p:documentation>
