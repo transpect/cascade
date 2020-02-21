@@ -67,9 +67,11 @@
   <xsl:param name="cwd" as="xs:string?"/>
   <xsl:param name="pipeline" as="xs:string?"/><!-- of declarative use only; will probably not be used when processing the content -->
   <xsl:param name="progress" as="xs:string?"/>
-  <xsl:param name="progress-to-stdout" as="xs:string?"/>  
+  <xsl:param name="progress-to-stdout" as="xs:string?"/>
 
   <xsl:output indent="yes"/>
+
+  <xsl:variable name="tr:conf-content-base-uri" select="/tr:conf/@content-base-uri"/>
 
   <xsl:variable name="tr:adaptions-path" as="xs:string" 
     select="'http://this.transpect.io/a9s/'"/>
@@ -151,7 +153,7 @@
             <xsl:with-param name="restricted-to" tunnel="yes"
               select="$matching-clades[1]/ancestor-or-self::tr:clade"/>
             <xsl:with-param name="matching-clade" select="$matching-clades[1]" tunnel="yes"/>
-            <xsl:with-param name="content-base-uri" select="/tr:conf/@content-base-uri" tunnel="yes"/>
+            <xsl:with-param name="content-base-uri" select="$tr:conf-content-base-uri" tunnel="yes"/>
             <xsl:with-param name="code-base-uri" select="$tr:adaptions-path" tunnel="yes"/>
           </xsl:apply-templates>
         </xsl:variable>
