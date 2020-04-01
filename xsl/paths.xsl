@@ -226,7 +226,11 @@
           <xsl:attribute name="name" select="$clade-name-value-pairs[name() = current()/@role]"/>
         </xsl:when>
       </xsl:choose>
-      <xsl:apply-templates select="@* | *" mode="#current"/>
+      <xsl:apply-templates select="@*" mode="#current"/>
+      <xsl:apply-templates select="parent::tr:cascade/tr:param[not(@name = current()/tr:param/@name)]" mode="#current">
+        <!-- default parameters -->
+      </xsl:apply-templates>
+      <xsl:apply-templates select="*" mode="#current"/>
     </xsl:copy>
   </xsl:template>
   
