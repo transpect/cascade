@@ -14,14 +14,27 @@
   
   <p:input port="conf">
     <p:document href="http://this.transpect.io/conf/transpect-conf.xml"/>
+    <p:documentation>
+      Expects a transpect configuration file
+    </p:documentation>
   </p:input>
   
   <p:output port="result" sequence="true"/>
   
   <p:serialization port="result" method="text" indent="false"/>
   
-  <p:option name="filename"/>
-  <p:option name="separator" select="'&#x20;'"/>
+  <p:option name="filename">
+    <p:documentation>
+      Expects a path or a filename which matches the clades configuration.
+    </p:documentation>
+  </p:option>
+  
+  <p:option name="separator" select="'&#x20;'">
+    <p:documentation>
+      A character used to separate the clades in stdout. For example set
+      to '&#xa;' if you want to get the 2nd output line with "$ sed -n 2p"
+    </p:documentation>
+  </p:option>
   
   <p:option name="debug" select="'yes'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>
