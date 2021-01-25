@@ -21,6 +21,7 @@
   <p:serialization port="result" method="text" indent="false"/>
   
   <p:option name="filename"/>
+  <p:option name="separator" select="'&#x20;'"/>
   
   <p:option name="debug" select="'yes'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>
@@ -45,7 +46,7 @@
     <p:with-option name="debug-dir-uri" select="$debug-dir-uri"/>
     <p:with-option name="status-dir-uri" select="$status-dir-uri"/>
     <p:input port="conf">
-      <p:pipe port="conf" step="clades-from-filename-stdout"/>
+        <p:pipe port="conf" step="clades-from-filename-stdout"/>
     </p:input>
     <p:input port="stylesheet">
       <p:pipe port="result" step="import-paths-xsl"/>
@@ -58,7 +59,11 @@
   <p:xslt name="generate-output">
     <p:input port="stylesheet">
       <p:inline>
-        <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
+        <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+                        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+          version="2.0">
+          
+          <xsl:param name="separator" as="xs:string"/>
           
           <xsl:template match="c:param-set">
             <c:data>
@@ -69,15 +74,13 @@
           </xsl:template>
           
           <xsl:template match="c:param[matches(@name, '^s9y\d$')]">
-            <xsl:value-of select="concat(@value, '&#x20;')"/>
+            <xsl:value-of select="concat(@value, '&#xa;')"/>
           </xsl:template>
           
         </xsl:stylesheet>
       </p:inline>
     </p:input>
-    <p:input port="parameters">
-      <p:empty/>
-    </p:input>
+    <p:with-param name="separator" select="$separator"/>
   </p:xslt>
   
 </p:declare-step>
