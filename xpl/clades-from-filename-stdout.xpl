@@ -9,7 +9,7 @@
   
   <p:documentation>
     This step provides the clades of one filename 
-    as whitespace separated list.
+    as separated tokens.
   </p:documentation>
   
   <p:input port="conf">
@@ -29,7 +29,7 @@
     </p:documentation>
   </p:option>
   
-  <p:option name="separator" select="'&#x20;'">
+  <p:option name="separator" select="'&#xa;'">
     <p:documentation>
       A character used to separate the clades in stdout. For example set
       to '&#xa;' if you want to get the 2nd output line with "$ sed -n 2p"
@@ -87,7 +87,7 @@
           </xsl:template>
           
           <xsl:template match="c:param[matches(@name, '^s9y\d$')]">
-            <xsl:value-of select="concat(@value, '&#xa;')"/>
+            <xsl:value-of select="concat(@value, $separator)"/>
           </xsl:template>
           
         </xsl:stylesheet>
