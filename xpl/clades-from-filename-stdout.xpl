@@ -36,6 +36,18 @@
     </p:documentation>
   </p:option>
   
+  <p:option name="get-full-path" select="'no'">
+    <p:documentation>
+      Option to get the full path of the clade. Permitted values: yes|no
+    </p:documentation>
+  </p:option>
+  
+  <p:option name="order" select="'ascending'">
+    <p:documentation>
+      Option to order the clades. Permitted values are 'ascending' and 'descending'.
+    </p:documentation>
+  </p:option>
+  
   <p:option name="debug" select="'yes'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>
   <p:option name="status-dir-uri" select="'status'"/>
@@ -74,19 +86,26 @@
       <p:inline>
         <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
                         xmlns:xs="http://www.w3.org/2001/XMLSchema"
-          version="2.0">
+                        version="2.0">
           
-          <xsl:param name="separator" as="xs:string"/>
+          <xsl:param name="separator"     as="xs:string"/>
+          <xsl:param name="get-full-path" as="xs:string"/>
+          <xsl:param name="order"         as="xs:string"/>
+          
+          <xsl:variable name="param-regex" 
+                        select="if($get-full-path eq 'yes')
+                                then '^s9y(\d)-path$'
+                                else '^s9y(\d)$'"/>
           
           <xsl:template match="c:param-set">
             <c:data>
-              <xsl:apply-templates select="c:param[matches(@name, '^s9y\d$')]">
-                <xsl:sort order="descending" select="replace(@name, '^s9y(\d)$', '$1')"/>
+              <xsl:apply-templates select="c:param[matches(@name, $param-regex)]">
+                <xsl:sort order="{$order}" select="replace(@name, $param-regex, '$1')"/>
               </xsl:apply-templates>
             </c:data>
           </xsl:template>
           
-          <xsl:template match="c:param[matches(@name, '^s9y\d$')]">
+          <xsl:template match="c:param[matches(@name, $param-regex)]">
             <xsl:value-of select="concat(@value, $separator)"/>
           </xsl:template>
           
@@ -94,6 +113,8 @@
       </p:inline>
     </p:input>
     <p:with-param name="separator" select="$separator"/>
+    <p:with-param name="get-full-path" select="$get-full-path"/>
+    <p:with-param name="order" select="$order"/>
   </p:xslt>
   
 </p:declare-step>
