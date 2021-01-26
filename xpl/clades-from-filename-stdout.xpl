@@ -106,7 +106,8 @@
           </xsl:template>
           
           <xsl:template match="c:param[matches(@name, $param-regex)]">
-            <xsl:value-of select="concat(@value, $separator)"/>
+            <xsl:value-of select="concat(replace(@value, '^file://', ''),
+				         $separator)"/>
           </xsl:template>
           
         </xsl:stylesheet>
