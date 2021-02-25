@@ -25,7 +25,7 @@
       
       <tr:recursive-directory-list>
         <p:with-option name="path" select="$path"/>
-        <!-- eclude filter expects a regular expression -->
+        <!-- exclude filter expects a regular expression -->
         <p:with-option name="exclude-filter" select="$exclude-filter"/>
       </tr:recursive-directory-list>
       
