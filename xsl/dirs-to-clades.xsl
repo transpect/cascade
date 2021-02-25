@@ -11,7 +11,7 @@
   
   <xsl:variable name="exclude-filter" select="/c:directory/c:param-set/c:param[@name eq 'exclude-filter']/@value" as="xs:string?"/>
   <xsl:variable name="exclude-filter-names" select="if($exclude-filter) 
-    then tokenize(replace($exclude-filter, '[\(\)'']', ''), '\|')
+    then tokenize(replace($exclude-filter, '[\\(\)'']', ''), '\|')
     else ''" as="xs:string*"/>
   
   <xsl:template match="/">
