@@ -48,6 +48,13 @@
     </p:documentation>
   </p:option>
   
+  <p:option name="exclude-filter" select="''">
+    <p:documentation>
+      Expects a whitespace-separated list of clade names to be excluded from 
+      the output. This can be necessary if you want to skip a specific clade.
+    </p:documentation>
+  </p:option>
+  
   <p:option name="debug" select="'yes'"/>
   <p:option name="debug-dir-uri" select="'debug'"/>
   <p:option name="status-dir-uri" select="'status'"/>
@@ -88,9 +95,10 @@
                         xmlns:xs="http://www.w3.org/2001/XMLSchema"
                         version="2.0">
           
-          <xsl:param name="separator"     as="xs:string"/>
-          <xsl:param name="get-full-path" as="xs:string"/>
-          <xsl:param name="order"         as="xs:string"/>
+          <xsl:param name="separator"      as="xs:string"/>
+          <xsl:param name="get-full-path"  as="xs:string"/>
+          <xsl:param name="order"          as="xs:string"/>
+          <xsl:param name="exclude-filter" as="xs:string"/>
           
           <xsl:variable name="param-regex" 
                         select="if($get-full-path eq 'yes')
@@ -106,8 +114,12 @@
           </xsl:template>
           
           <xsl:template match="c:param[matches(@name, $param-regex)]">
-            <xsl:value-of select="concat(replace(@value, '^file://', ''),
-				         $separator)"/>
+            <xsl:variable name="clade-name" as="xs:string" 
+                          select="tokenize(@value, '/')[. ne ''][last()]"/>
+            <xsl:if test="not($clade-name = tokenize($exclude-filter, '\s'))">
+              <xsl:value-of select="concat(replace(@value, '^file://', ''),
+  				                                 $separator)"/>
+            </xsl:if>
           </xsl:template>
           
         </xsl:stylesheet>
@@ -116,6 +128,7 @@
     <p:with-param name="separator" select="$separator"/>
     <p:with-param name="get-full-path" select="$get-full-path"/>
     <p:with-param name="order" select="$order"/>
+    <p:with-param name="exclude-filter" select="$exclude-filter"/>
   </p:xslt>
   
 </p:declare-step>
