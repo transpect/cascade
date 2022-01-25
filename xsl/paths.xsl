@@ -382,7 +382,7 @@
     </c:param>
   </xsl:template>
 
-  <xsl:variable name="tr:clades-token-regex" select="'^([a-zA-Z][-a-zA-Z0-9]+)[=_]([-.a-zA-Z0-9~]+)$'" as="xs:string"/>
+  <xsl:variable name="tr:clades-token-regex" select="'^([a-zA-Z][-a-zA-Z0-9]+)[=_]([-.a-zA-Z0-9~_]+)$'" as="xs:string"/>
 
   <xsl:function name="tr:parse-clades-string" as="attribute(*)*">
     <xsl:param name="input" as="xs:string?"/>
