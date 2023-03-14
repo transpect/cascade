@@ -204,24 +204,24 @@
                           (name($nvp) = self::tr:clade/@role and not(string($nvp) = @name))
                           and
                           not(some $d in descendant::tr:clade 
-                              satisfies (name($nvp) = $d/@role))) ">
-          <!-- There is no clade of the same role below, and this clade’s name does not match. -->
+                              satisfies (name($nvp) = $d/@role or matches(name($nvp) , concat('',$d/@name-regex,'')))))">
+          <!-- There is no clade of the same role below, and this clade’s name or name-regex does not match. -->
+        </xsl:when>
+        <xsl:when test="exists(current()/@name-regex)
+                        and exists($clade-name-value-pairs[name() = current()/@role][matches(.,concat('', current()/@name-regex,''))])">
+          <xsl:attribute name="matches" select="'maybe'"/>
+          <xsl:attribute name="name" select="$clade-name-value-pairs[name() = current()/@role][matches(., current()/@name-regex)]"/>
+        </xsl:when>
+        <xsl:when test="exists(current()/@name-regex)
+                        and exists($clade-name-value-pairs[name() = current()/@role][not(matches(., concat('', current()/@name-regex,'')))])">
+          <xsl:attribute name="matches" select="'false'"/>
         </xsl:when>
         <xsl:when test="some $ds in descendant-or-self::tr:clade 
                         satisfies (exists($clade-name-value-pairs[name() = $ds/@role][. = ($ds/@file-name-component, $ds/@name)]))">
           <xsl:attribute name="matches" select="'maybe'"/>
         </xsl:when>
-        <xsl:when test="exists(current()/@name-regex)
-          and exists($clade-name-value-pairs[name() = current()/@role][matches(., current()/@name-regex)])">
-          <xsl:attribute name="matches" select="'maybe'"/>
-          <xsl:attribute name="name" select="$clade-name-value-pairs[name() = current()/@role][matches(., current()/@name-regex)]"/>
-        </xsl:when>
-        <xsl:when test="exists(current()/@name-regex)
-          and exists($clade-name-value-pairs[name() = current()/@role][not(matches(., current()/@name-regex))])">
-          <xsl:attribute name="matches" select="'false'"/>
-        </xsl:when>
         <xsl:when test="not(exists(current()/(@name | @name-regex)))
-          and exists($clade-name-value-pairs[name() = current()/@role])">
+                        and exists($clade-name-value-pairs[name() = current()/@role])">
           <xsl:attribute name="matches" select="'maybe'"/>
           <xsl:attribute name="name" select="$clade-name-value-pairs[name() = current()/@role]"/>
         </xsl:when>
