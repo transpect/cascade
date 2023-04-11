@@ -50,7 +50,7 @@
       <!-- use p:xslt to add the xml:base attribute, since p:add-attribute can reorder existing attributes -->
       <p:xslt name="add_xml-base_attribute">
         <p:input port="parameters"><p:empty/></p:input>
-        <p:with-param name="base-uri" select="base-uri()">
+        <p:with-param name="base-uri" select="base-uri(/*)">
           <xsl:choose>
             <xsl:when test="$result-connection">
               <xsl:sequence select="$result-connection"/>
