@@ -15,6 +15,9 @@
   101026_04711_RAT.idml or 101027_00123_ADHOC_fig_2-3.pdf.</p:documentation>
   
   <p:option name="filenames" required="true"/>
+  <p:option name="clades" select="''">
+    <p:documentation>Optional parameter that with a space-separated list of clades.</p:documentation>
+  </p:option>
   <p:option name="debug" required="false" select="'no'"/>
   <p:option name="debug-dir-uri" required="false" select="resolve-uri('debug')"/>
   <p:option name="status-dir-uri" required="false" select="'status?enabled=false'"/>
@@ -65,6 +68,7 @@
     <tr:paths name="paths">
       <p:with-option name="pipeline" select="'paths-for-files.xpl'"/>
       <p:with-option name="file" select="/*/@name"/>
+      <p:with-option name="clades" select="$clades"/>
       <p:with-option name="debug" select="$debug"/>  
       <p:with-option name="debug-dir-uri" select="$debug-dir-uri"/>
       <p:with-option name="status-dir-uri" select="$status-dir-uri"/>
