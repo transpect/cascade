@@ -301,9 +301,13 @@
         <xsl:next-match/>
         <xsl:call-template name="tr:other-params"/>
       </xsl:variable>
-      <!-- These are the command line overrides: --> 
+      <!-- These are the command line overrides: -->
       <xsl:variable name="param-document-params" as="element(c:param)*" select="collection()/c:param-set/c:param"/>
-      <xsl:for-each-group select="$prelim[not(@name = $param-document-params/@name)], $param-document-params" group-by="@name">
+      <!-- These are global, clade-independent params in the config: -->
+      <xsl:variable name="global-config-params" as="element(c:param)*">
+        <xsl:apply-templates select="collection()/tr:conf/tr:cascade/tr:param[not(@name = $param-document-params/@name)]" mode="tr:create-paths-doc"/>  
+      </xsl:variable>
+      <xsl:for-each-group select="$prelim[not(@name = $param-document-params/@name)], $param-document-params, $global-config-params" group-by="@name">
         <xsl:sort select="@name"/>
         <xsl:sequence select="current-group()[last()]"/>
       </xsl:for-each-group>
