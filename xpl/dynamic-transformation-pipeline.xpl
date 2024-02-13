@@ -159,7 +159,10 @@
     <p:group>
       <p:validate-with-relax-ng  assert-valid="true">
         <p:input port="schema">
-          <p:document href="https://www.w3.org/TR/xproc/schemas/xproc.rng"/>
+          <p:document href="http://www.w3.org/TR/xproc/schema/1.0/xproc.rng">
+            <!-- should be resolved to calabash[-frontend]/schemas/XProc/1.0/xproc.rng
+                 by calabash[-frontend]/xmlcatalog/catalog.xml → calabash[-frontend]/schemas/xmlcatalog/catalog.xml -->
+          </p:document>
         </p:input>
         <p:input port="source">
           <p:pipe port="result" step="pipeline"/>
