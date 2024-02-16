@@ -4,7 +4,7 @@
   xmlns:c="http://www.w3.org/ns/xproc-step" 
   xmlns:cat="urn:oasis:names:tc:entity:xmlns:xml:catalog"
   xmlns:tr="http://transpect.io" 
-  version="2.0"
+  version="3.0"
   exclude-result-prefixes="xs cat tr">
 
   <xsl:import href="http://transpect.io/xslt-util/xslt-based-catalog-resolver/xsl/resolve-uri-by-catalog.xsl"/>
@@ -326,17 +326,51 @@
     <xsl:copy>
       <xsl:apply-templates select="@name" mode="#current"/>
       <xsl:attribute name="value" separator="">
-        <xsl:analyze-string select="@value" regex="{$placeholder-regex}">
-          <xsl:matching-substring>
-            <xsl:value-of select="$all-params[@name = regex-group(1)]/@value"/>
-          </xsl:matching-substring>
-          <xsl:non-matching-substring>
-            <xsl:value-of select="."/>
-          </xsl:non-matching-substring>
-        </xsl:analyze-string>
+        <xsl:variable name="prelim" as="xs:string+">
+          <xsl:analyze-string select="@value" regex="{$placeholder-regex}">
+            <xsl:matching-substring>
+              <xsl:sequence select="string($all-params[@name = regex-group(1)]/@value)"/>
+            </xsl:matching-substring>
+            <xsl:non-matching-substring>
+              <xsl:sequence select="."/>
+            </xsl:non-matching-substring>
+          </xsl:analyze-string>
+        </xsl:variable>
+        <xsl:message select="'PPPPPPPPPP ', $prelim"></xsl:message>
+        <xsl:sequence select="string-join($prelim, '')" use-when="xs:decimal(system-property('xsl:version')) lt 3.0"/>
+        <xsl:variable name="function-placeholder-regex" as="xs:string" select="'!\s*(\i\c+:\i\c+)\s*\(([^,]+(,[^,]+)*)\)'"/>
+        <xsl:analyze-string select="string-join($prelim)" regex="{$function-placeholder-regex}" use-when="xs:decimal(system-property('xsl:version')) ge 3.0">
+            <xsl:matching-substring>
+              <!-- This is not a proper parser! Values (after placeholder expansion) will be treated as strings, and they will be whitespace-normalized. 
+                Omit single or double quotes around the arguments lest they become part of the string arguments. 
+                All commas, even when contained in placeholder expansion strings, will be treated as argument separators. --> 
+              <xsl:variable name="args" as="xs:string+" select="tokenize(regex-group(2), ',') ! normalize-space()"/>
+              <xsl:sequence select="function-lookup(xs:QName(regex-group(1)), 1)($args)"/>
+            </xsl:matching-substring>
+            <xsl:non-matching-substring>
+              <xsl:value-of select="."/>
+            </xsl:non-matching-substring>
+          </xsl:analyze-string>
       </xsl:attribute>
     </xsl:copy>
   </xsl:template>
+  
+  <xsl:function name="tr:floor" as="xs:string">
+    <xsl:param name="name-and-module" as="item()+"/>
+    <xsl:variable name="name" select="$name-and-module[1]"/>
+    <xsl:variable name="modulo" select="$name-and-module[2] ! xs:integer(.)"/>
+    <xsl:variable name="prelim" as="xs:string+">
+      <xsl:analyze-string select="$name" regex="\D+0*">
+        <xsl:matching-substring>
+          <xsl:sequence select="."/>
+        </xsl:matching-substring>
+        <xsl:non-matching-substring>
+          <xsl:value-of select="string((xs:integer(.) idiv $modulo) * $modulo)"/>
+        </xsl:non-matching-substring>
+      </xsl:analyze-string>  
+    </xsl:variable>    
+    <xsl:sequence select="string-join($prelim)"/>
+  </xsl:function>
   
   <xsl:template match="tr:clade | tr:content" mode="tr:create-paths-doc">
     <xsl:variable name="s9y" as="xs:integer" select="@stack-pos"/>
