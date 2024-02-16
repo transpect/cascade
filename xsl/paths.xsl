@@ -320,9 +320,9 @@
     </c:param-set>
   </xsl:template>
   
-  <xsl:template match="c:param[contains(@value, '${')]" mode="tr:expand-placeholders">
+  <xsl:template match="c:param[contains(@value, '{$')]" mode="tr:expand-placeholders">
     <xsl:param name="all-params" as="element(c:param)+" tunnel="yes"/>
-    <xsl:variable name="placeholder-regex" as="xs:string" select="'\$\{([^\}]+)\}'"/>
+    <xsl:variable name="placeholder-regex" as="xs:string" select="'\{\$([^\}]+)\}'"/>
     <xsl:copy>
       <xsl:apply-templates select="@name" mode="#current"/>
       <xsl:attribute name="value" separator="">
