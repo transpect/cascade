@@ -10,7 +10,8 @@
   <xsl:import href="http://transpect.io/xslt-util/xslt-based-catalog-resolver/xsl/resolve-uri-by-catalog.xsl"/>
   <xsl:import href="http://transpect.io/xslt-util/resolve-uri/xsl/resolve-uri.xsl"/>
   <xsl:param name="cat:missing-next-catalogs-warning" as="xs:string" select="'no'"/>
-
+  <xsl:param name="collection-uri" as="xs:string?" select="()"/>
+  
   <!-- Calculate a set of parameters for subsequent XProc steps / XSLT transformations.
     The parameters are the URLs of the directories where the tool looks for customized
     settings data (XProc pipelines, XSLT, Schematron, …) for the configuration cascade.
@@ -95,7 +96,7 @@
     select="$parse-clades-string,
             $parse-file-name[not(name() = $parse-clades-string/name())]" />
 
-  <xsl:template match="* | @*" mode="tr:prequalify-matching-clades tr:conf-filter">
+  <xsl:template match="* | @*" mode="tr:prequalify-matching-clades tr:conf-filter tr:expand-placeholders">
     <xsl:copy>
       <xsl:apply-templates select="@*, *" mode="#current"/>
     </xsl:copy>
@@ -302,16 +303,39 @@
         <xsl:call-template name="tr:other-params"/>
       </xsl:variable>
       <!-- These are the command line overrides: -->
-      <xsl:variable name="param-document-params" as="element(c:param)*" select="collection()/c:param-set/c:param"/>
+      <xsl:variable name="param-document-params" as="element(c:param)*" select="collection($collection-uri)/c:param-set/c:param"/>
       <!-- These are global, clade-independent params in the config: -->
       <xsl:variable name="global-config-params" as="element(c:param)*">
-        <xsl:apply-templates select="collection()/tr:conf/tr:cascade/tr:param[not(@name = $param-document-params/@name)]" mode="tr:create-paths-doc"/>  
+        <xsl:apply-templates select="collection($collection-uri)/tr:conf/tr:cascade/tr:param[not(@name = $param-document-params/@name)]" mode="tr:create-paths-doc"/>  
       </xsl:variable>
-      <xsl:for-each-group select="$prelim[not(@name = $param-document-params/@name)], $param-document-params, $global-config-params" group-by="@name">
-        <xsl:sort select="@name"/>
-        <xsl:sequence select="current-group()[last()]"/>
-      </xsl:for-each-group>
+      <xsl:variable name="prelim2" as="element(c:param)+">
+        <xsl:for-each-group select="$prelim[not(@name = $param-document-params/@name)], $param-document-params, $global-config-params" group-by="@name">
+          <xsl:sort select="@name"/>
+          <xsl:sequence select="current-group()[last()]"/>
+        </xsl:for-each-group>  
+      </xsl:variable>
+      <xsl:apply-templates select="$prelim2" mode="tr:expand-placeholders">
+        <xsl:with-param name="all-params" as="element(c:param)+" select="$prelim2" tunnel="yes"/>
+      </xsl:apply-templates>
     </c:param-set>
+  </xsl:template>
+  
+  <xsl:template match="c:param[contains(@value, '${')]" mode="tr:expand-placeholders">
+    <xsl:param name="all-params" as="element(c:param)+" tunnel="yes"/>
+    <xsl:variable name="placeholder-regex" as="xs:string" select="'\$\{([^\}]+)\}'"/>
+    <xsl:copy>
+      <xsl:apply-templates select="@name" mode="#current"/>
+      <xsl:attribute name="value" separator="">
+        <xsl:analyze-string select="@value" regex="{$placeholder-regex}">
+          <xsl:matching-substring>
+            <xsl:value-of select="$all-params[@name = regex-group(1)]/@value"/>
+          </xsl:matching-substring>
+          <xsl:non-matching-substring>
+            <xsl:value-of select="."/>
+          </xsl:non-matching-substring>
+        </xsl:analyze-string>
+      </xsl:attribute>
+    </xsl:copy>
   </xsl:template>
   
   <xsl:template match="tr:clade | tr:content" mode="tr:create-paths-doc">
@@ -467,11 +491,11 @@
     <c:param name="_params-from-filename-parsing" value="{tr:diagnostic-string($parse-file-name)}"/>
     <!-- svn: -->
     <c:param name="transpect-project-uri"
-      value="{if (collection()/info/entry) then string-join((collection()/info/entry[1]/url, collection()/info/entry[1]/commit/@revision), '?p=') else ''}"/>
+      value="{if (collection($collection-uri)/info/entry) then string-join((collection($collection-uri)/info/entry[1]/url, collection($collection-uri)/info/entry[1]/commit/@revision), '?p=') else ''}"/>
     <c:param name="transpect-project-revision"
-      value="{if (collection()/info/entry/commit) then collection()/info/entry[1]/commit/@revision else ''}"/>
+      value="{if (collection($collection-uri)/info/entry/commit) then collection($collection-uri)/info/entry[1]/commit/@revision else ''}"/>
     <c:param name="transpect-project-timestamp"
-      value="{if (collection()/info/entry/commit) then collection()/info/entry[1]/commit/date else ''}"/>
+      value="{if (collection($collection-uri)/info/entry/commit) then collection($collection-uri)/info/entry[1]/commit/date else ''}"/>
     <c:param name="progress" value="{$progress}"/>
     <c:param name="progress-to-stdout" value="{$progress-to-stdout}"/>
     <xsl:if test="$interface-language">
