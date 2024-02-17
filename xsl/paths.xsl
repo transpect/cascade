@@ -337,9 +337,15 @@
           </xsl:analyze-string>
         </xsl:variable>
         <xsl:message select="'PPPPPPPPPP ', $prelim"></xsl:message>
-        <xsl:sequence select="string-join($prelim, '')" use-when="xs:decimal(system-property('xsl:version')) lt 3.0"/>
+        <xsl:sequence select="string-join($prelim, '')" 
+          use-when="xs:decimal(system-property('xsl:version')) lt 3.0
+                    or 
+                    not(system-property('xsl:supports-higher-order-functions') = 'yes')"/>
         <xsl:variable name="function-placeholder-regex" as="xs:string" select="'!\s*(\i\c+:\i\c+)\s*\(([^,]+(,[^,]+)*)\)'"/>
-        <xsl:analyze-string select="string-join($prelim)" regex="{$function-placeholder-regex}" use-when="xs:decimal(system-property('xsl:version')) ge 3.0">
+        <xsl:analyze-string select="string-join($prelim)" regex="{$function-placeholder-regex}" 
+          use-when="xs:decimal(system-property('xsl:version')) ge 3.0
+                    and
+                    system-property('xsl:supports-higher-order-functions') = 'yes'">
             <xsl:matching-substring>
               <!-- This is not a proper parser! Values (after placeholder expansion) will be treated as strings, and they will be whitespace-normalized. 
                 Omit single or double quotes around the arguments lest they become part of the string arguments. 
