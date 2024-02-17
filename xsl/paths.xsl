@@ -336,7 +336,6 @@
             </xsl:non-matching-substring>
           </xsl:analyze-string>
         </xsl:variable>
-        <xsl:message select="'PPPPPPPPPP ', $prelim"></xsl:message>
         <xsl:sequence select="string-join($prelim, '')" 
           use-when="xs:decimal(system-property('xsl:version')) lt 3.0
                     or 
