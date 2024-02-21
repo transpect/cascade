@@ -390,7 +390,7 @@
     <c:param name="s9y{$s9y}" value="{@name}"/>
     <xsl:if test="$s9y = 1">
       <xsl:variable name="href" select="tr:href-by-content-clade(.)" as="xs:string"/>
-      <xsl:variable name="local-dir-href" as="xs:string" select="tr:resolve-uri-by-catalog($path, $tr:catalog)"/>
+      <xsl:variable name="local-dir-href" as="xs:string?" select="tr:resolve-uri-by-catalog($path, $tr:catalog)"/>
       <xsl:variable name="content-dir-overrides" as="xs:string" select="replace($local-dir-href, '^(.+?)(/+)?$', '$1/override-params.xml')"/>
       <c:param name="repo-href-local" value="{tr:resolve-uri-by-catalog($href, $tr:catalog)}"/>
       <c:param name="repo-href-canonical" value="{$href}"/>
