@@ -68,12 +68,33 @@
   </define>
 
   <define name="clade-model">
-    <optional>
-      <ref name="content"/>
-    </optional>
-    <zeroOrMore>
-      <ref name="clade"/>
-    </zeroOrMore>
+    <choice>
+      <group>
+        <optional>
+          <ref name="content"/>
+        </optional>
+        <zeroOrMore>
+          <ref name="clade"/>
+        </zeroOrMore>
+      </group>
+      <ref name="same-as"/>      
+    </choice>
+  </define>
+  
+  <define name="same-as">
+    <element name="same-as">
+      <a:documentation>Refer to another clade of the same role whose name is given by same-as/@clade and reuse its content model
+        (everything below it except params, that is, content and clade elements). This element has been introduced in order 
+        to avoid redundancy in the config file.</a:documentation>
+      <attribute name="clade"/>
+    </element>
+    <s:pattern id="unique-same-as">
+      <s:rule context="tr:same-as">
+        <s:let name="referenced-clade" value="//tr:clade[not(. is current()/..)][@role = current()/../@role][@name = current()/@clade]"/>
+        <s:assert test="count($referenced-clade) = 1">There must be exactly one clade (not the parent clade though)
+          of role '<s:value-of select="../@role"/>' with the name '<s:value-of select="@clade"/>'.</s:assert>
+      </s:rule>
+    </s:pattern>
   </define>
 
   <define name="clade">

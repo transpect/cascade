@@ -17,20 +17,21 @@
     settings data (XProc pipelines, XSLT, Schematron, …) for the configuration cascade.
     
     See a description of the configuration file in 
-    https://subversion.le-tex.de/common/pubcoach/trunk/schema/transpect-conf.rng
+    https://github.com/transpect/cascade/blob/master/schema/cascade.rng
     
     See a description of the invocation parameters (file, clades) in 
-    https://subversion.le-tex.de/common/pubcoach/trunk/xpl/paths.xpl
+    https://github.com/transpect/cascade/blob/master/xpl/paths.xpl
     
     If the XML catalog includes (the local copy of) 
-    https://subversion.le-tex.de/common/pubcoach/trunk/xmlcatalog/catalog.xml,
+    https://github.com/transpect/cascade/blob/master/xmlcatalog/catalog.xml,
     this XSLT may be imported by its canonical URL, which is 
     http://transpect.io/cascade/xsl/paths.xsl
     
-    If you want to substitute functions or templates, it is recommended that you do it by
-    inlining the importing XSLT in you XProc pipelines, or by putting the custom XSLT
-    files close to the XProc file so that you can load the customized XSLT using a 
-    relative path.
+    Functions or templates can be overwritten in your project-specific paths.xsl, 
+    the location of which can be given in /Q{http://transpect.io}conf/@paths-xsl-uri
+    in the transpect configuration file.
+    It can be a canonical URI such as http://this.transpect.io/a9s/common/xsl/paths.xsl
+    that can be resolved by the project’s catalog.
     
     The primary customization points are the functions
     
@@ -42,12 +43,24 @@
     tr:target-base-name(): Base name of the target (content repo) file. Default:
       original base name
     As a second input document, the result of calling svn info -\-xml may be supplied.
-    It will be used for the param named transpect-project-uri 
+    It will be used for the param named transpect-project-uri.
 
     In order to include parameters that are passed by the invoking pipeline, the c:param-set document
     of this pipeline is passed to this xsl as the 3rd source document. 
     It will include this param-set’s parameters in the result document (unless these parameters
     have been newly created with possibly different values by this xsl).
+
+    In addition to the XProc steps, there is also an XQuery front-end in the directory cascade/xquery.
+    It needs to run in a BaseX that has a) a Saxon Jar in lib/custom and b) scripts that set the
+    CATALOG (BaseX 10+) or the CATFILE (BaseX 9.x) option like this:
+
+    CATFILE=xmlcatalog/catalog.xml
+    exec java -Dorg.basex.CATALOG=$CATFILE -cp "$CP" $BASEX_JVM org.basex.BaseX "$@"
+
+    This relative catalog location works if the basex directory is in the project directory 
+    (for example, an svn external that points to https://subversion.le-tex.de/common/basex10/)
+    that also contains the project’s xmlcatalog/catalog.xml, and if the BaseX start script
+    is invoked from the project directory.
 
   -->
 
@@ -74,7 +87,7 @@
 
   <xsl:variable name="tr:conf-content-base-uri" select="/tr:conf/@content-base-uri"/>
 
-  <xsl:variable name="tr:adaptions-path" as="xs:string" 
+  <xsl:variable name="tr:adaptations-path" as="xs:string" 
     select="'http://this.transpect.io/a9s/'"/>
   
   <xsl:variable name="tr:common-path" as="xs:string" 
@@ -96,7 +109,7 @@
     select="$parse-clades-string,
             $parse-file-name[not(name() = $parse-clades-string/name())]" />
 
-  <xsl:template match="* | @*" mode="tr:prequalify-matching-clades tr:conf-filter tr:expand-placeholders">
+  <xsl:template match="* | @*" mode="tr:expand-same-as tr:prequalify-matching-clades tr:conf-filter tr:expand-placeholders">
     <xsl:copy>
       <xsl:apply-templates select="@*, *" mode="#current"/>
     </xsl:copy>
@@ -107,10 +120,15 @@
       <xsl:message select="'WARNING: ', string($parse-file-name[name() = 'base']), ' is not a base name, but a full uri. Please check your tr:parse-file-name() override.'"/>
     </xsl:if>
     <xsl:if test="not(/*/self::tr:conf)">
-      <xsl:message select="'Empty or no conf element. Please supply config file.'" terminate="yes"/>
+      <xsl:message select="'Empty or no conf element. Please supply a transpect configuration file.'" terminate="yes"/>
     </xsl:if>
+    <xsl:variable name="expand-same-as" as="document-node(element(tr:conf))">
+      <xsl:document>
+        <xsl:apply-templates select="/" mode="tr:expand-same-as"/>
+      </xsl:document>
+    </xsl:variable>
     <xsl:variable name="prequalify-matching-clades" as="element(tr:conf)">
-      <xsl:apply-templates select="/" mode="tr:prequalify-matching-clades">
+      <xsl:apply-templates select="$expand-same-as" mode="tr:prequalify-matching-clades">
         <xsl:with-param name="clade-name-value-pairs" as="attribute(*)*" tunnel="yes">
           <!-- If a parameter exists in the clades string, it has precedence over a parameter with the same name
           that is derived from the file name. Please note that the <em>role</em> of a clade will translate to the 
@@ -155,7 +173,7 @@
               select="$matching-clades[1]/ancestor-or-self::tr:clade"/>
             <xsl:with-param name="matching-clade" select="$matching-clades[1]" tunnel="yes"/>
             <xsl:with-param name="content-base-uri" select="$tr:conf-content-base-uri" tunnel="yes"/>
-            <xsl:with-param name="code-base-uri" select="$tr:adaptions-path" tunnel="yes"/>
+            <xsl:with-param name="code-base-uri" select="$tr:adaptations-path" tunnel="yes"/>
           </xsl:apply-templates>
         </xsl:variable>
         <xsl:result-document href="cascade/2_conf-filter.xml">
@@ -166,6 +184,14 @@
         </xsl:apply-templates>
       </xsl:otherwise>
     </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="tr:same-as" mode="tr:expand-same-as">
+    <!-- The schematron in cascade.rng will throw an error if @clade does not point to
+         a single clade (other than the parent clade of the current same-as element) -->
+    <xsl:variable name="referenced-clade" as="element(tr:clade)" 
+      select="//tr:clade[@name = current()/@clade][@role = current()/../@role][not(. is current()/..)]"/>
+    <xsl:copy-of select="$referenced-clade/*[empty(self::tr:param)]"/>
   </xsl:template>
 
   <!--<xsl:template match="/" priority="2">
