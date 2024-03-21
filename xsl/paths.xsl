@@ -362,11 +362,11 @@
             </xsl:non-matching-substring>
           </xsl:analyze-string>
         </xsl:variable>
+        <xsl:variable name="function-placeholder-regex" as="xs:string" select="'!\s*(\i\c+:\i\c+)\s*\(([^,]+(,[^,]+)*)\)'"/>
         <xsl:sequence select="string-join($prelim, '')" 
           use-when="xs:decimal(system-property('xsl:version')) lt 3.0
                     or 
                     not(system-property('xsl:supports-higher-order-functions') = 'yes')"/>
-        <xsl:variable name="function-placeholder-regex" as="xs:string" select="'!\s*(\i\c+:\i\c+)\s*\(([^,]+(,[^,]+)*)\)'"/>
         <xsl:analyze-string select="string-join($prelim)" regex="{$function-placeholder-regex}" 
           use-when="xs:decimal(system-property('xsl:version')) ge 3.0
                     and
@@ -389,7 +389,7 @@
   <xsl:function name="tr:floor" as="xs:string">
     <xsl:param name="name-and-module" as="item()+"/>
     <xsl:variable name="name" select="$name-and-module[1]"/>
-    <xsl:variable name="modulo" select="$name-and-module[2] ! xs:integer(.)"/>
+    <xsl:variable name="modulo" select="for $nam in $name-and-module[2] return xs:integer($nam)"/>
     <xsl:variable name="prelim" as="xs:string+">
       <xsl:analyze-string select="$name" regex="\D+0*">
         <xsl:matching-substring>
@@ -400,7 +400,7 @@
         </xsl:non-matching-substring>
       </xsl:analyze-string>  
     </xsl:variable>    
-    <xsl:sequence select="string-join($prelim)"/>
+    <xsl:sequence select="string-join($prelim, '')"/>
   </xsl:function>
   
   <xsl:template match="tr:clade | tr:content" mode="tr:create-paths-doc">
