@@ -7,10 +7,11 @@ declare variable $filename as xs:string external;
 declare variable $svnuser as xs:string external;
 declare variable $svnpass as xs:string external;
 declare variable $svnauth := map{'username':$svnuser,'cert-path':'', 'password': $svnpass};        
+declare variable $fire as xs:boolean external := false();
 
 cascade:ensure-versionability(
   $filename,
   $svnuser, $svnpass,
   map{'multi-article-repos': cascade:ensure-versionability-multi-article#5 },
-  false()
+  $fire
 )
