@@ -62,18 +62,73 @@ declare function cascade:ensure-versionability-multi-article (
   $svnauth as map(xs:string, xs:string),
   $helper-functions as map(xs:string, function(*)),
   $fire as xs:boolean
-) as xs:string* {
+) as item()* {
   (: It is expected that there is a specificity role called 'volume-type' that can assume
      the values 'Vol' or 'ahead-of-print' (unassigned to a specific journal volume/issue yet) :)
   let $volume-type as xs:string := cascade:s9y-lookup($params-for-filename, 'volume-type', ''),
       $ms-wc-dir as xs:string := cascade:s9y-lookup($params-for-filename, 'ms', '-path'),
+      $ms-external-mountpoint as xs:string := ($ms-wc-dir => tokenize('/'))[normalize-space()][last()],
+      $ms-external-url as xs:string := string-join(
+                                           (string($params-for-filename/c:param[@name='content-repo-location']/@value),
+                                            $ms-external-mountpoint),
+                                           '/'),
       $ms-parent-dir := file:parent($ms-wc-dir),
       $missing-wc-dirs as xs:string* := cascade:update-svn-wc($ms-parent-dir, $svnauth, (), $fire)
   return (
     for $d in $missing-wc-dirs
-    return cascade:svn-mkdir-if-inexistent($d, $svnauth, $fire),
-    svn:propget($ms-parent-dir, $svnauth, 'svn:externals', 'HEAD')
+    return cascade:svn-mkdir-if-inexistent($d, $svnauth, true(), $fire),
+    cascade:svn-mkdir-if-inexistent($ms-external-url, $svnauth, false(), $fire),
+    cascade:ensure-external-exists($ms-parent-dir, $ms-external-url, $ms-external-mountpoint, $svnauth, $fire)
   )
+};
+
+declare function cascade:ensure-external-exists (
+    $wc-path as xs:string,
+    $external-url as xs:string,
+    $mountpoint as xs:string,
+    $svnauth as map(xs:string, xs:string),
+    $fire as xs:boolean
+  ) as item()* {
+  let $current-externals as element(external)* := cascade:get-svn-externals($wc-path, ())
+  return cascade:merge-svn-externals(
+           $wc-path, 
+           ($current-externals, <external url="{$external-url}" mount="{$mountpoint}"/>), 
+           $svnauth,
+           $fire
+         )
+};
+
+declare function cascade:merge-svn-externals (
+  (: when the same @mount occurs repeatedly, the last one will prevail :)
+    $dir as xs:string,
+    $externals as element(external)+,
+    $svnauth as map(xs:string, xs:string)?,
+    $fire as xs:boolean
+  ) as item()* {
+  let $ordered := document {$externals},
+      $prop := string-join(
+                 $ordered/external[not(@mount = following-sibling::external/@mount)] 
+                   ! (string-join((@url, @rev), '@') || ' ' || @mount),
+                 '&#xa;'
+               )
+  return (prof:dump('Setting externals to ' || $prop || ' on ' || $dir),
+  cascade:svn-propset('svn:externals', $prop, $dir, $svnauth, $fire))
+};
+
+
+declare function cascade:get-svn-externals (
+  $dir as xs:string, 
+  $svnauth as map(xs:string, xs:string)?
+) as element(external)* {
+  try {
+    (:svn:propget($ms-parent-dir, $svnauth, 'svn:externals', 'HEAD') doesn’t work on local paths :)
+    cascade:svn-propget('svn:externals', 
+                         $dir, 
+                         ('--username', $svnauth?username, '--password', $svnauth?password)[exists($svnauth)]
+                        ) => cascade:parse-svn-externals-prop()
+  } catch cascade:ERR-svn-propget-01 {
+    ()
+  }
 };
 
 declare function cascade:s9y-lookup (
@@ -120,14 +175,18 @@ declare function cascade:update-svn-wc (
     }
 };
 
-declare function cascade:svn-mkdir-if-inexistent($dir as xs:string, $svnauth as map(xs:string, xs:string), $fire as xs:boolean) 
-  as element(*)+ {
+declare function cascade:svn-mkdir-if-inexistent(
+  $dir as xs:string, 
+  $svnauth as map(xs:string, xs:string),
+  $is-wc as xs:boolean,
+  $fire as xs:boolean
+) as element(*)+ {
   if (not(file:exists($dir)))
   then prof:dump('cascade:svn-mkdir-if-inexistent: ' || $dir || ' inexistent'),
        try { cascade:svn-info($dir, $svnauth) }
        catch cascade:ERR-EV-01 { (prof:dump('  need to create it'),
-                                  cascade:svn-mkdir($dir, $svnauth),
-                                  if ($fire) 
+                                  cascade:svn-mkdir($dir, $svnauth, 'created by svn-mkdir-if-inexistent in cascade.xqm'[not($is-wc)]),
+                                  if ($fire and $is-wc) 
                                   then (prof:dump('  and commit it.'),
                                         svn:commit($svnauth, $dir, 'svn-mkdir-if-inexistent autocommit')) ) }
   
@@ -163,10 +222,57 @@ declare function cascade:svn-info($repo-url as xs:string, $svnauth as map(xs:str
     else $repo-info 
 };
 
-declare function cascade:svn-mkdir($dir as xs:string, $svnauth as map(xs:string, xs:string)) {
-  proc:execute('svn', ('mkdir', $dir, '--username', $svnauth?username, '--password', $svnauth?password))
+declare function cascade:svn-mkdir($dir as xs:string, $svnauth as map(xs:string, xs:string), $message as xs:string?) {
+  proc:execute('svn', ('mkdir', $dir, '--username', $svnauth?username, '--password', $svnauth?password,
+                        ('-m', $message)[$message]))
 };
 
 declare function cascade:svn-update($path as xs:string, $svnauth as map(xs:string, xs:string)) {
   proc:execute('svn', ('update', $path, '--username', $svnauth?username, '--password', $svnauth?password))
+};
+
+declare function cascade:svn-propget($propname as xs:string, $path as xs:string, $svnauth as map(xs:string, xs:string)?) 
+  as element(property)* {
+  let $result := proc:execute('svn', ('propget', '--xml', $propname, $path, 
+                               ('--username', $svnauth?username, '--password', $svnauth?password)[exists($svnauth)]))
+  return if ($result/code = '0')
+         then parse-xml($result/output/text())/properties/target/property
+         else error(xs:QName('cascade:ERR-svn-propget-01'), string($result/error))
+};
+
+declare function cascade:svn-propset(
+  $propname as xs:string, 
+  $propval as xs:string, 
+  $path as xs:string, 
+  $svnauth as map(xs:string, xs:string)?,
+  $fire as xs:boolean
+) 
+  as element(*)* (: element(property) from cascade:svn-propget, element(c:param-set) from svn:commit() :) {
+    (: probably need to supply a commit message when $path points to a repo :)
+  let $result := proc:execute('svn', ('propset', $propname, $propval, $path, 
+                                         ('--username', $svnauth?username, '--password', $svnauth?password)[exists($svnauth)]))
+  return if ($result/code = '0')
+         then (
+                if ($fire)
+                then (prof:dump('committing the properties of ' || $path),
+                      svn:commit($svnauth, $path, 'add/merge external autocommit')
+                     ),
+                cascade:svn-propget($propname, $path, $svnauth)
+            )
+         else error(xs:QName('cascade:ERR-svn-propset-01'), string($result/error))
+};
+
+
+declare function cascade:parse-svn-externals-prop($prop as xs:string) as element(external)* {
+  for $line in ($prop => tokenize('[&#xa;&#xd;]+'))[normalize-space()]
+  return <external> {
+    let $tokens as xs:string+ := $line => tokenize('\s+'),
+        $url-plus-rev := $tokens[matches(., '^https?:')],
+        $mount as xs:string* := $tokens[not(matches(., '^https?:'))],
+        $rev as xs:string* := ($url-plus-rev[contains(., '@')] => tokenize('@'))[last()],
+        $url := replace($url-plus-rev, '^(.+?)(@\d+)$', '$1')
+    return (attribute url { $url },
+            if(exists($rev)) then attribute rev { $rev } else (),
+            attribute mount { $mount })
+  }</external>
 };
