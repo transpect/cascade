@@ -38,13 +38,12 @@ declare function cascade:params-for-filename($filename as xs:string) as element(
 };
 
 declare function cascade:ensure-versionability(
-    $filename as xs:string, 
-    $svnuser as xs:string, $svnpass as xs:string,
+    $filename as xs:string,
+    $svnauth as map(xs:string, xs:string),
     $helper-functions as map(xs:string, function(*)),
     $fire as xs:boolean
   ) as item()* {
-  let $svnauth := map{'username':$svnuser,'cert-path':'', 'password': $svnpass},
-      $params-for-filename := 
+  let $params-for-filename := 
         try {cascade:params-for-filename($filename) }
         catch cascade:ERR-params-01 { 
           prof:dump($err:value),
@@ -66,7 +65,7 @@ declare function cascade:ensure-versionability-multi-article (
   (: It is expected that there is a specificity role called 'volume-type' that can assume
      the values 'Vol' or 'ahead-of-print' (unassigned to a specific journal volume/issue yet) :)
   let $volume-type as xs:string := cascade:s9y-lookup($params-for-filename, 'volume-type', ''),
-      $ms-wc-dir as xs:string := cascade:s9y-lookup($params-for-filename, 'ms', '-path') => cascade:path-to-native(),
+      $ms-wc-dir as xs:string := cascade:s9y-lookup($params-for-filename, 'ms', '-path') => file:resolve-path(),
       $ms-external-mountpoint as xs:string := ($ms-wc-dir => tokenize('/'))[normalize-space()][last()],
       $ms-external-url as xs:string := string-join(
                                            (string($params-for-filename/c:param[@name='content-repo-location']/@value),
@@ -97,9 +96,9 @@ declare function cascade:lock-copy-add-commit-file (
 ) as item()* {
   (: the target file dir has been created/updated by previous operations :)
   let $source-file-uri := $params-for-filename/c:param[@name = 'file']/@value,
-      $source-file-name := $source-file-uri => cascade:path-to-native(),
+      $source-file-name := $source-file-uri => file:resolve-path(),
       $target-file-uri := $params-for-filename/c:param[@name = 'repo-href-local']/@value,
-      $target-file-name := $target-file-uri => cascade:path-to-native()
+      $target-file-name := $target-file-uri => file:resolve-path()
   return (
     cascade:try-svn-lock($target-file-name),
     file:copy($source-file-uri, $target-file-uri),
@@ -249,7 +248,7 @@ declare function cascade:svn-mkdir-if-inexistent(
   $is-wc as xs:boolean,
   $fire as xs:boolean
 ) as element(*)+ {
-  let $path := if ($is-wc) then cascade:path-to-native($dir) else $dir
+  let $path := if ($is-wc) then file:resolve-path($dir) else $dir
   return
   if (not(file:exists($path)))
   then (
@@ -372,8 +371,24 @@ declare function cascade:parse-svn-externals-prop($prop as xs:string) as element
   }</external>
 };
 
-declare function cascade:path-to-native($uri) as xs:string {
-  if (file:exists($uri))
-  then file:path-to-native($uri) (: works only if a file exists :)
-  else (: Unix only, for the time being :) replace($uri, '^file:/+', '/')
+declare function cascade:scan-svn-simple-auth($realmstring-regex) as map(xs:string, xs:string)* {
+  let $authdir := proc:property('user.home') || '/.subversion/auth/svn.simple/',
+      $auth-files := file:list($authdir)[matches(., '^[0-9a-z]+$')]
+  return (
+            prof:dump('Auth files: ' || string-join($auth-files, ', ')),
+            for $file in $auth-files
+            let $content := file:read-text($authdir || $file)
+            return cascade:parse-svn-simple-auth($content)[matches(?realmstring, $realmstring-regex)]
+        )
+};
+
+declare function cascade:parse-svn-simple-auth($content) as map(xs:string, xs:string)? {
+  let $lines := tokenize($content, '[&#xa;&#xd;]+')[normalize-space()],
+      $map := map:merge(
+                for tumbling window $kv in $lines
+                start $k when matches($k, '^K \d+$')
+                return map:entry(replace($kv[2], '^svn:', ''), $kv[4])
+              )
+ where $map?passtype = 'simple'
+ return $map
 };
