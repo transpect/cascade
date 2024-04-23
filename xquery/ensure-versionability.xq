@@ -21,7 +21,7 @@ declare function hobots:xml-subdir (
   $helper-functions as map(xs:string, function(*))
 ) as xs:string { 'hojots'};
 
-let $svnauth := if ($realmstring-regex) then cascade:scan-svn-simple-auth($realmstring-regex)
+let $svnauth := if ($realmstring-regex) then cascade:scan-svn-simple-auth($realmstring-regex)[1]
                                           else map{'username':$svnuser,'cert-path':'', 'password': $svnpass}
 return
 cascade:ensure-versionability(
