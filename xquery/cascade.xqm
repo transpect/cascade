@@ -65,7 +65,7 @@ declare function cascade:ensure-versionability-multi-article (
   (: It is expected that there is a specificity role called 'volume-type' that can assume
      the values 'Vol' or 'ahead-of-print' (unassigned to a specific journal volume/issue yet) :)
   let $volume-type as xs:string := cascade:s9y-lookup($params-for-filename, 'volume-type', ''),
-      $ms-wc-dir as xs:string := cascade:s9y-lookup($params-for-filename, 'ms', '-path') => file:resolve-path(),
+      $ms-wc-dir as xs:string := (cascade:s9y-lookup($params-for-filename, 'ms', '-path') => file:resolve-path()) || '/',
       $ms-external-mountpoint as xs:string := ($ms-wc-dir => tokenize('/'))[normalize-space()][last()],
       $ms-external-url as xs:string := string-join(
                                            (string($params-for-filename/c:param[@name='content-repo-location']/@value),
@@ -111,21 +111,39 @@ declare function cascade:lock-copy-add-commit-file (
   )
 };
 
+declare function cascade:default-xml-subdir (
+  $params-for-filename as element(c:param-set),
+  $helper-functions as map(xs:string, function(*))
+) as xs:string { 'xml' };
+
 declare function cascade:subdir-for-ext-from-params (
   $params-for-filename as element(c:param-set),
   $helper-functions as map(xs:string, function(*))
 ) as xs:string? {
+  (: maybe we can just use the subdir that paths.xsl determined in repo-href-local
+     instead of doing our own lookup? :)
   let $ext := $params-for-filename/c:param[@name = 'ext']/@value
   return switch($ext)
             case 'idml' return 'idml'
             case 'docx' 
             case 'docm' return 'docx'
-            case 'xml' return 'hobots'
-            case 'xhtml' return 'report'
+            case 'qb.xml'
+            case 'crossref.xml'
+            case 'jsx' return 'crossref'
+            case 'report.xhtml'
+            case 'report.xml' return 'report'
             case 'png'
             case 'jpg'
+            case 'PNG'
+            case 'JPG'
+            case 'jpeg'
+            case 'JPEG'
+            case 'TIF'
+            case 'tiff'
+            case 'TIFF'
             case 'tif' return $helper-functions('image-subdir')($params-for-filename, $helper-functions)
-            default return ()
+            case 'xml' return $helper-functions('xml-subdir')($params-for-filename, $helper-functions)
+            default return $ext
 };
 
 declare function cascade:image-subdir-for-ext-from-params (
@@ -248,7 +266,7 @@ declare function cascade:svn-mkdir-if-inexistent(
   $is-wc as xs:boolean,
   $fire as xs:boolean
 ) as element(*)+ {
-  let $path := if ($is-wc) then file:resolve-path($dir) else $dir
+  let $path := if ($is-wc) then file:resolve-path($dir) || '/' else $dir
   return
   if (not(file:exists($path)))
   then (
@@ -375,7 +393,7 @@ declare function cascade:scan-svn-simple-auth($realmstring-regex) as map(xs:stri
   let $authdir := proc:property('user.home') || '/.subversion/auth/svn.simple/',
       $auth-files := file:list($authdir)[matches(., '^[0-9a-z]+$')]
   return (
-            prof:dump('Auth files: ' || string-join($auth-files, ', ')),
+            (:prof:dump('Auth files: ' || string-join($auth-files, ', ')),:)
             for $file in $auth-files
             let $content := file:read-text($authdir || $file)
             return cascade:parse-svn-simple-auth($content)[matches(?realmstring, $realmstring-regex)]
