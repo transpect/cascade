@@ -63,7 +63,8 @@ declare function cascade:ensure-versionability-multi-article (
   $fire as xs:boolean
 ) as item()* {
   (: It is expected that there is a specificity role called 'volume-type' that can assume
-     the values 'Vol' or 'ahead-of-print' (unassigned to a specific journal volume/issue yet) :)
+     the values 'Vol' or 'ahead-of-print' (unassigned to a specific journal volume/issue yet).
+     In addition, it is expected that the manuscript top-level directory is the path for the role 'ms'. :)
   let $volume-type as xs:string := cascade:s9y-lookup($params-for-filename, 'volume-type', ''),
       $ms-wc-dir as xs:string := (cascade:s9y-lookup($params-for-filename, 'ms', '-path') => file:resolve-path()) || '/',
       $ms-external-mountpoint as xs:string := ($ms-wc-dir => tokenize('/'))[normalize-space()][last()],
@@ -71,7 +72,7 @@ declare function cascade:ensure-versionability-multi-article (
                                            (string($params-for-filename/c:param[@name='content-repo-location']/@value),
                                             $ms-external-mountpoint),
                                            '/'),
-      $ms-wc-subdir := $ms-wc-dir || $helper-functions('ext-to-subdir')($params-for-filename, $helper-functions),
+      $ms-wc-subdir := $ms-wc-dir || cascade:subdir-from-params($params-for-filename),
       $ms-parent-dir := file:parent($ms-wc-dir),
       $missing-wc-dirs as xs:string* := cascade:update-svn-wc($ms-parent-dir, $svnauth, (), $fire)
   return (
@@ -111,55 +112,19 @@ declare function cascade:lock-copy-add-commit-file (
   )
 };
 
-declare function cascade:default-xml-subdir (
-  $params-for-filename as element(c:param-set),
-  $helper-functions as map(xs:string, function(*))
-) as xs:string { 'xml' };
-
-declare function cascade:subdir-for-ext-from-params (
-  $params-for-filename as element(c:param-set),
-  $helper-functions as map(xs:string, function(*))
+declare function cascade:subdir-from-params (
+  $params-for-filename as element(c:param-set)
 ) as xs:string? {
-  (: maybe we can just use the subdir that paths.xsl determined in repo-href-local
-     instead of doing our own lookup? :)
-  let $ext := $params-for-filename/c:param[@name = 'ext']/@value
-  return switch($ext)
-            case 'idml' return 'idml'
-            case 'docx' 
-            case 'docm' return 'docx'
-            case 'qb.xml'
-            case 'crossref.xml'
-            case 'jsx' return 'crossref'
-            case 'report.xhtml'
-            case 'report.xml' return 'report'
-            case 'png'
-            case 'jpg'
-            case 'PNG'
-            case 'JPG'
-            case 'jpeg'
-            case 'JPEG'
-            case 'TIF'
-            case 'tiff'
-            case 'TIFF'
-            case 'tif' return $helper-functions('image-subdir')($params-for-filename, $helper-functions)
-            case 'xml' return $helper-functions('xml-subdir')($params-for-filename, $helper-functions)
-            default return $ext
-};
-
-declare function cascade:image-subdir-for-ext-from-params (
-  $params-for-filename as element(c:param-set),
-  $helper-functions as map(xs:string, function(*))
-) as xs:string? {
-  'images/' || 
-  (cascade:s9y-lookup($params-for-filename, 'ms', '-path') 
-     => tokenize('/'))[normalize-space()][last()] || '_fig_'
-};
-
-declare function cascade:simple-image-subdir-for-ext-from-params (
-  $params-for-filename as element(c:param-set),
-  $helper-functions as map(xs:string, function(*))
-) as xs:string? {
-  'images/'
+  let $dest-path as xs:string := $params-for-filename/c:param[@name = 'repo-href-local']/@value/string(),
+      $ms-dir as xs:string := cascade:s9y-lookup($params-for-filename, 'ms', '-path'),
+      $basename as xs:string := $params-for-filename/c:param[@name = 'basename']/@value/string(),
+      $ext as xs:string := $params-for-filename/c:param[@name = 'ext']/@value/string(),
+      $filename as xs:string := string-join(($basename, $ext), '.'),
+      $subdir as xs:string := $dest-path => substring-after($ms-dir) => substring-before($filename)
+   return (
+     prof:dump('Subdir determined as ' || $subdir),
+     $subdir
+   )
 };
 
 

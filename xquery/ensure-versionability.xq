@@ -27,10 +27,6 @@ return
 cascade:ensure-versionability(
   $filename,
   $svnauth,
-  map{'multi-article-repos': cascade:ensure-versionability-multi-article#5,
-      'ext-to-subdir': cascade:subdir-for-ext-from-params#2,
-      'image-subdir': cascade:simple-image-subdir-for-ext-from-params#2,
-      'xml-subdir': hobots:xml-subdir#2
-     },
+  map{'multi-article-repos': cascade:ensure-versionability-multi-article#5},
   $fire
 )
