@@ -108,7 +108,7 @@ declare function cascade:lock-copy-add-commit-file (
     } catch * {
       prof:dump('Cannot freshly add ' || $target-file-name || '. Maybe already versioned.')
     },
-    svn:commit($svnauth, $target-file-name, 'lock-copy-add-commit-file autocommit')
+    cascade:svn-commit($target-file-name, $svnauth, 'lock-copy-add-commit-file autocommit')
   )
 };
 
@@ -208,7 +208,8 @@ declare function cascade:update-svn-wc (
       let $svn-info as element(c:param-set) := cascade:svn-info($dir, $svnauth)
       return (
         prof:dump('  got it: ' || serialize($svn-info)),
-        for $u in svn:update($svnauth, $dir, 'HEAD') return prof:dump('  updated: ' || serialize($u)),
+        prof:dump('  trying to update ' || $dir),
+        for $u in cascade:svn-update($dir, $svnauth) return prof:dump('  updated: ' || string($u)),
         $svn-mkdirs-todo
       )
     }
@@ -295,9 +296,9 @@ declare function cascade:svn-add($dir-or-file as xs:string) {
   proc:execute('svn', ('add', $dir-or-file))
 };
 
-declare function cascade:svn-update($path as xs:string, $svnauth as map(xs:string, xs:string)) {
+(:declare function cascade:svn-update($path as xs:string, $svnauth as map(xs:string, xs:string)) {
   proc:execute('svn', ('update', $path, '--username', $svnauth?username, '--password', $svnauth?password))
-};
+};:)
 
 declare function cascade:try-svn-lock($file as xs:string) {
   try {
@@ -317,6 +318,24 @@ declare function cascade:svn-propget($propname as xs:string, $path as xs:string,
          else error(xs:QName('cascade:ERR-svn-propget-01'), string($result/error))
 };
 
+declare function cascade:svn-update($path as xs:string, $svnauth as map(xs:string, xs:string)?) 
+  as element(*)* {
+  let $result := proc:execute('svn', ('update', $path, 
+                               ('--username', $svnauth?username, '--password', $svnauth?password)[exists($svnauth)]))
+  return if ($result/code = '0')
+         then <update>{$result}</update>
+         else error(xs:QName('cascade:ERR-svn-update-01'), string($result/error))
+};
+
+declare function cascade:svn-commit($path as xs:string, $svnauth as map(xs:string, xs:string)?, $comment) 
+  as element(*)* {
+  let $result := proc:execute('svn', ('commit', $path, '-m', $comment,
+                               ('--username', $svnauth?username, '--password', $svnauth?password)[exists($svnauth)]))
+  return if ($result/code = '0')
+         then <commit>{$result}</commit>
+         else error(xs:QName('cascade:ERR-svn-commit-01'), string($result/error))
+};
+
 declare function cascade:svn-propset(
   $propname as xs:string, 
   $propval as xs:string, 
@@ -332,7 +351,7 @@ declare function cascade:svn-propset(
          then (
                 if ($fire)
                 then (prof:dump('committing the properties of ' || $path),
-                      svn:commit($svnauth, $path, 'add/merge external autocommit')
+                      cascade:svn-commit($path, $svnauth, 'add/merge external autocommit')
                      ),
                 cascade:svn-propget($propname, $path, $svnauth)
             )
