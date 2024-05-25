@@ -1,6 +1,6 @@
 module namespace cascade = "http://transpect.io/cascade";
 
-import module namespace svn = 'io.transpect.basex.extensions.subversion.XSvnApi';
+(:import module namespace svn = 'io.transpect.basex.extensions.subversion.XSvnApi';:)
 
 declare namespace c = "http://www.w3.org/ns/xproc-step";
 declare namespace jats = "http://jats.nlm.nih.gov";
@@ -213,7 +213,7 @@ declare function cascade:update-svn-wc (
         $svn-mkdirs-todo
       )
     }
-    catch cascade:ERR-EV-02 {
+    catch cascade:ERR-svn-info-02 {
       (: it has been added, but not committed yet. We can add externals before we commit if $fire = false().
          If §fire = true(), newly created directories need to be committed because we don’t know later which was
          the top directory that needs to be committed :)
@@ -238,53 +238,36 @@ declare function cascade:svn-mkdir-if-inexistent(
   then (
          prof:dump('cascade:svn-mkdir-if-inexistent: ' || $path || ' inexistent'),
          try { cascade:svn-info($path, $svnauth) }
-         catch cascade:ERR-EV-01 { (prof:dump('  need to create it'),
-                                     cascade:svn-mkdir($path, $svnauth, 'created by svn-mkdir-if-inexistent in cascade.xqm'[not($is-wc)]),
+         catch cascade:ERR-svn-info-01 { (prof:dump('  need to create it'),
+                                           cascade:svn-mkdir($path, $svnauth, 'created by svn-mkdir-if-inexistent in cascade.xqm'[not($is-wc)]),
                                      if ($fire and $is-wc) 
                                      then (prof:dump('  and commit it.'),
-                                           svn:commit($svnauth, $path, 'svn-mkdir-if-inexistent autocommit')) ) 
+                                           cascade:svn-commit($path, $svnauth, 'svn-mkdir-if-inexistent autocommit')) ) 
                                 }
       )
   else (
          prof:dump('cascade:svn-mkdir-if-inexistent: ' || $path || ' exists but is not versioned yet'),
          try { cascade:svn-info($path, $svnauth) }
-         catch cascade:ERR-EV-01 { (prof:dump('  need to add it'),
-                                    cascade:svn-add(file:path-to-native($path)),
-                                    if ($fire and $is-wc) 
-                                    then (prof:dump('  and to commit it.'),
-                                          svn:commit($svnauth, $path, 'added by svn-mkdir-if-inexistent in cascade.xqm')) ) 
+         catch cascade:ERR-svn-info-01 { (prof:dump('  need to add it'),
+                                           cascade:svn-add(file:path-to-native($path)),
+                                           if ($fire and $is-wc) 
+                                           then (prof:dump('  and to commit it.'),
+                                                 cascade:svn-commit($path, $svnauth, 'added by svn-mkdir-if-inexistent in cascade.xqm')) ) 
                                   }
        )
 };
 
-declare function cascade:svn-info($repo-url as xs:string, $svnauth as map(xs:string, xs:string)?) as element(c:param-set) {
-  (: $repo-url may also be local directory :)
-  let $repo-info :=
-    try { svn:info($repo-url, $svnauth) }
-    catch err:XPTY0004 {(: an error 'java.lang.NullPointerException: Cannot invoke "String.length()" because "string" is null. 
-      Caused by: io.transpect.basex.extensions.subversion.XSvnApi:info(String, map(xs:string, xs:string)).' 
-      will be thrown for still-empty repos :)
-      <c:param-set>
-        <c:param name="rev" value="0"/>
-        <c:param name="root-url" value="https://hobotssvn.hogrefe.com/BookTagSet/werke/101024_a000750"/>
-        <c:param name="nodekind" value="dir"/>
-        <c:param name="url" value="https://hobotssvn.hogrefe.com/BookTagSet/werke/101024_a000750"/>
-      </c:param-set>}
-  return 
-    if ($repo-info/self::c:errors)
-    then (
-          prof:dump($repo-info),
-          if (starts-with($repo-info/c:error, 'svn: E195002:'))
-          then error(xs:QName('cascade:ERR-EV-02'), 
-                     'The working copy at ' || $repo-url 
+declare function cascade:svn-info($uri as xs:string, $svnauth as map(xs:string, xs:string)?) as element(*)* {
+  let $result := proc:execute('svn', ('info', '--xml', $uri, 
+                               ('--username', $svnauth?username, '--password', $svnauth?password)[exists($svnauth)]))
+  return if ($result/code = '0')
+         then parse-xml($result/output/text())/*
+         else if (contains($result/error, 'E195002:'))
+              then error(xs:QName('cascade:ERR-svn-info-02'), 'The working copy at ' || $uri 
                      || ' seems to contain uncommited changes. Please commit them first'
-                     || ' or delete the topmost directory added and apply an svn revert --depth infinity to its path.', $repo-info)
-          else
-          error(xs:QName('cascade:ERR-EV-01'), 
-               'Error accessing a repo at ' || $repo-url 
-               || '. Maybe it needs to be created first.', $repo-info)
-         )
-    else $repo-info 
+                     || ' or delete the topmost directory added and apply an svn revert --depth infinity to its path. ' 
+                     || string($result/error))
+              else error(xs:QName('cascade:ERR-svn-info-01'), string($result/error))
 };
 
 declare function cascade:svn-mkdir($dir as xs:string, $svnauth as map(xs:string, xs:string), $message as xs:string?) {
