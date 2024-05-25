@@ -57,7 +57,7 @@ declare function cascade:ensure-versionability(
 
 declare function cascade:ensure-versionability-multi-article (
   $params-for-filename as element(c:param-set),
-  $repo-info as element(c:param-set),
+  $repo-info as element(*),
   $svnauth as map(xs:string, xs:string),
   $helper-functions as map(xs:string, function(*)),
   $fire as xs:boolean
@@ -205,7 +205,7 @@ declare function cascade:update-svn-wc (
               else error(xs:QName('cascade:ERR-svn-01'), 'Cannot find svn working copy at ' || $dir)
   else 
     try {
-      let $svn-info as element(c:param-set) := cascade:svn-info($dir, $svnauth)
+      let $svn-info as element(*) := cascade:svn-info($dir, $svnauth)
       return (
         prof:dump('  got it: ' || serialize($svn-info)),
         prof:dump('  trying to update ' || $dir),
