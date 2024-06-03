@@ -27,6 +27,7 @@ return
 cascade:ensure-versionability(
   $filename,
   $svnauth,
-  map{'multi-article-repos': cascade:ensure-versionability-multi-article#5},
+  map{'multi-article-repos': cascade:ensure-versionability-multi-article#5,
+      'work-repos': cascade:ensure-versionability-work#5},
   $fire
 )

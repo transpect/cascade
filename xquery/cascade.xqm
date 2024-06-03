@@ -89,6 +89,33 @@ declare function cascade:ensure-versionability-multi-article (
   )
 };
 
+declare function cascade:ensure-versionability-work (
+  $params-for-filename as element(c:param-set),
+  $repo-info as element(*),
+  $svnauth as map(xs:string, xs:string),
+  $helper-functions as map(xs:string, function(*)),
+  $fire as xs:boolean
+) as item()* {
+  let $ms-wc-dir as xs:string := (cascade:s9y-lookup($params-for-filename, 'ms', '-path') => file:resolve-path()) || '/',
+      $ms-external-mountpoint as xs:string := ($ms-wc-dir => tokenize('/'))[normalize-space()][last()],
+      $ms-external-url as xs:string := string($params-for-filename/c:param[@name='content-repo-location']/@value),
+      $ms-wc-subdir := $ms-wc-dir || cascade:subdir-from-params($params-for-filename),
+      $ms-parent-dir := file:parent($ms-wc-dir),
+      $missing-wc-dirs as xs:string* := cascade:update-svn-wc($ms-parent-dir, $svnauth, (), $fire)
+  return (
+    for $d in $missing-wc-dirs
+    return cascade:svn-mkdir-if-inexistent($d, $svnauth, true(), $fire),
+    cascade:svn-mkdir-if-inexistent($ms-external-url, $svnauth, false(), $fire),
+    cascade:ensure-external-exists($ms-parent-dir, $ms-external-url, $ms-external-mountpoint, $svnauth, $fire),
+    let $missing-ms-wc-dirs as xs:string* := cascade:update-svn-wc($ms-wc-subdir, $svnauth, (), $fire)
+    return (if (exists($missing-ms-wc-dirs))
+            then prof:dump('Missing MS subdirs: ' || string-join($missing-ms-wc-dirs, ', ')) else (),
+            for $d in $missing-ms-wc-dirs
+            return cascade:svn-mkdir-if-inexistent($d, $svnauth, true(), $fire)),
+    cascade:lock-copy-add-commit-file($params-for-filename, $svnauth, $helper-functions, $fire)
+  )
+};
+
 declare function cascade:lock-copy-add-commit-file (
   $params-for-filename as element(c:param-set),
   $svnauth as map(xs:string, xs:string),
