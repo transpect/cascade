@@ -144,9 +144,7 @@ declare function cascade:subdir-from-params (
 ) as xs:string? {
   let $dest-path as xs:string := $params-for-filename/c:param[@name = 'repo-href-local']/@value/string(),
       $ms-dir as xs:string := cascade:s9y-lookup($params-for-filename, 'ms', '-path'),
-      $basename as xs:string := $params-for-filename/c:param[@name = 'basename']/@value/string(),
-      $ext as xs:string := $params-for-filename/c:param[@name = 'ext']/@value/string(),
-      $filename as xs:string := string-join(($basename, $ext), '.'),
+      $filename as xs:string := ($dest-path => tokenize('/'))[normalize-space()][last()],
       $subdir as xs:string := $dest-path => substring-after($ms-dir) => substring-before($filename)
    return (
      prof:dump('Subdir determined as ' || $subdir),
