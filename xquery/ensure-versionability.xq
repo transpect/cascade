@@ -20,11 +20,6 @@ declare variable $fire as xs:boolean external := false();
 (: $filename is expected to be a local file with a path relative to the current working directory
 or with an absolute path. It will be copied to the svn working copy :)
 
-declare function hobots:xml-subdir (
-  $params-for-filename as element(c:param-set),
-  $helper-functions as map(xs:string, function(*))
-) as xs:string { 'hojots'};
-
 let $svnauth := if ($realmstring-regex) then cascade:scan-svn-simple-auth($realmstring-regex)[1]
                                           else map{'username':$svnuser,'cert-path':'', 'password': $svnpass}
 return
