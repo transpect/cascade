@@ -4,6 +4,10 @@ import module namespace svn = 'io.transpect.basex.extensions.subversion.XSvnApi'
 (: This is an example script for journals that you may use as a template for your own customization’s XQuery file. 
  It might be necessary to add more helper function hooks in cascade.xqm. Please file pull requests. :)
 
+(: sample invocation
+basex/bin/basex -b svnuser=gimsieke -b svnpass=******* -b filename=suc_3-24_a000878_tbl3a.tif -b fire=true cascade/xquery/ensure-versionability.xq
+:)
+
 declare namespace c = "http://www.w3.org/ns/xproc-step";
 declare namespace hobots = "http://www.hogrefe.com/namespace/hobots";
 
