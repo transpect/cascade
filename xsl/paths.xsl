@@ -82,6 +82,7 @@
   <xsl:param name="pipeline" as="xs:string?"/><!-- of declarative use only; will probably not be used when processing the content -->
   <xsl:param name="progress" as="xs:string?"/>
   <xsl:param name="progress-to-stdout" as="xs:string?"/>
+  <xsl:param name="all-atts-as-params" as="xs:boolean" select="false()"/>
 
   <xsl:output indent="yes"/>
 
@@ -574,6 +575,13 @@
       <c:param name="ext" value="{($all-atts[name() = 'ext'], tr:ext($file))[1]}"/>
       <c:param name="basename" value="{tr:basename($file)}"/>
     </xsl:if>
+    <xsl:if test="$all-atts-as-params">
+      <xsl:apply-templates select="$all-atts" mode="att-to-param"/>
+    </xsl:if>
+  </xsl:template>
+  
+  <xsl:template match="@*" mode="att-to-param">
+    <c:param name="{name()}" value="{string(.)}"/>
   </xsl:template>
 
 </xsl:stylesheet>

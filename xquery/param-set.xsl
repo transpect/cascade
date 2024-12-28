@@ -39,13 +39,16 @@
   </xsl:template>
   
   <xsl:template match="c:file/@name" name="params-for-filename">
+    <xsl:param name="include-parsed-tokens-in-param-set" as="xs:boolean" select="false()"/>
+    <xsl:param name="filename" as="xs:string?" select="$filename"/>
     <xsl:variable name="_filename" as="xs:string" select="if ($filename) then $filename else string(.)" />
     <xsl:sequence select="transform(map{
                                         'source-node': $transpect-conf,
                                         'stylesheet-location': $transpect-conf/tr:conf/@paths-xsl-uri,
                                         'stylesheet-params': map{
                                                                   xs:QName('collection-uri'): $collection-uri,
-                                                                  xs:QName('file'): $_filename
+                                                                  xs:QName('file'): $_filename,
+                                                                  xs:QName('all-atts-as-params'): $include-parsed-tokens-in-param-set
                                                                 }
                                         })?output"/>
   </xsl:template>
