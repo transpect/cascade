@@ -19,11 +19,22 @@
   <p:option name="filenames">
     <p:documentation>space-separated list of filenames</p:documentation>
   </p:option>
+  <p:option name="clades" select="''">
+    <p:documentation>Optional parameter that with a space-separated list of clades.</p:documentation>
+  </p:option>
+  <p:option name="debug" required="false" select="'no'"/>
+  <p:option name="debug-dir-uri" required="false" select="resolve-uri('debug')"/>
+  <p:option name="status-dir-uri" required="false" select="'status?enabled=false'"/>
+  <p:option name="fail-on-error" select="'false'"/>
   
   <p:import href="http://transpect.io/cascade/xpl/paths-for-files.xpl"/>
   
   <tr:paths-for-files name="paths-for-files">
     <p:with-option name="filenames" select="$filenames"/>
+    <p:with-option name="debug" select="$debug"/>
+    <p:with-option name="debug-dir-uri" select="$debug-dir-uri"/>
+    <p:with-option name="status-dir-uri" select="$status-dir-uri"/>
+    <p:with-option name="fail-on-error" select="$fail-on-error"/>
     <p:input port="conf">
       <p:pipe port="conf" step="paths-for-files-xml"/>
     </p:input>
