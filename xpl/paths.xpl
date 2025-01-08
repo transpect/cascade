@@ -67,6 +67,10 @@
   <p:import href="http://transpect.io/xproc-util/simple-progress-msg/xpl/simple-progress-msg.xpl"/>
 	<p:import href="http://transpect.io/xproc-util/file-uri/xpl/file-uri.xpl"/>
   
+  <p:variable name="stylesheet-base-uri" select="base-uri(/*)">
+    <p:pipe port="stylesheet" step="paths"/>
+  </p:variable>
+  
   <p:try name="try">
     <p:group>
       <p:output port="result" primary="true">
@@ -112,6 +116,36 @@
       <tr:file-uri name="file-uri">
         <p:with-option name="filename" select="$file"/>
       </tr:file-uri>
+      
+      <p:sink/>
+      
+      <p:identity>
+        <p:input port="source">
+          <p:pipe port="conf" step="paths"/>
+        </p:input>
+      </p:identity>
+      
+      <p:choose name="stylesheet">
+        <p:documentation xmlns="http://www.w3.org/1999/xhtml">>
+          Load stylesheet file given in /tr:conf/@paths-xsl-uri if there is a more specific paths.xsl 
+          and(!) on the stylesheet port of step paths only waits the fallback.
+        </p:documentation>
+        <p:when test="doc-available(/tr:conf/@paths-xsl-uri) and
+                      $stylesheet-base-uri = base-uri(doc('../xsl/paths.xsl'))">
+          <p:output port="result" primary="true"/><!--<cx:message message="paths.xsl: load from conf"/>-->
+          <p:load name="import-paths-xsl">
+            <p:with-option name="href" select="/tr:conf/@paths-xsl-uri"/>
+          </p:load>
+        </p:when>
+        <p:otherwise>
+          <p:output port="result" primary="true"/><!--<cx:message message="paths.xsl: load from port"/>-->
+          <p:identity>
+            <p:input port="source">
+              <p:pipe port="stylesheet" step="paths"/>
+            </p:input>
+          </p:identity>
+        </p:otherwise>
+      </p:choose>
 
       <p:sink/>
 
@@ -147,7 +181,7 @@
           <p:pipe port="params" step="paths"/>
         </p:input>
         <p:input port="stylesheet">
-          <p:pipe step="paths" port="stylesheet"/>
+          <p:pipe step="stylesheet" port="result"/>
         </p:input>
         <p:input port="parameters">
           <p:pipe port="params" step="paths"/>
