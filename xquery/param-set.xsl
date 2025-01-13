@@ -2,8 +2,9 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:tr="http://transpect.io"
-  xmlns:c="http://www.w3.org/ns/xproc-step"  
-  exclude-result-prefixes="xs tr"
+  xmlns:c="http://www.w3.org/ns/xproc-step"
+  xmlns:map="http://www.w3.org/2005/xpath-functions/map"  
+  exclude-result-prefixes="xs tr map"
   version="3.0">
   
   <!-- Invocation either by submitting a c:filenames document (see below) as input and processing it in default mode
@@ -41,16 +42,23 @@
   <xsl:template match="c:file/@name" name="params-for-filename">
     <xsl:param name="include-parsed-tokens-in-param-set" as="xs:boolean" select="false()"/>
     <xsl:param name="filename" as="xs:string?" select="$filename"/>
+    <xsl:param name="debug" as="xs:boolean"/>
     <xsl:variable name="_filename" as="xs:string" select="if ($filename) then $filename else string(.)" />
-    <xsl:sequence select="transform(map{
-                                        'source-node': $transpect-conf,
-                                        'stylesheet-location': $transpect-conf/tr:conf/@paths-xsl-uri,
-                                        'stylesheet-params': map{
-                                                                  xs:QName('collection-uri'): $collection-uri,
-                                                                  xs:QName('file'): $_filename,
-                                                                  xs:QName('all-atts-as-params'): $include-parsed-tokens-in-param-set
-                                                                }
-                                        })?output"/>
+    <xsl:variable name="result" as="map(*)"
+      select="transform(map{
+                          'source-node': $transpect-conf,
+                          'stylesheet-location': $transpect-conf/tr:conf/@paths-xsl-uri,
+                          'stylesheet-params': map{
+                                                    xs:QName('collection-uri'): $collection-uri,
+                                                    xs:QName('file'): $_filename,
+                                                    xs:QName('all-atts-as-params'): $include-parsed-tokens-in-param-set
+                                                  }
+                          })"/>
+    <xsl:if test="$debug">
+      <xsl:message select="'cascade/1_prequalify-matching-clades.xml', 
+                           map:keys($result)[ends-with(., 'cascade/1_prequalify-matching-clades.xml')] ! map:get($result, .)"/>
+    </xsl:if>
+    <xsl:sequence select="$result?output"/>
   </xsl:template>
   
 </xsl:stylesheet>
