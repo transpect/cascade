@@ -3,6 +3,7 @@
   xmlns="http://relaxng.org/ns/structure/1.0"
   xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0" 
   xmlns:s="http://purl.oclc.org/dsdl/schematron"
+  xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   ns="http://transpect.io"
   datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
 
@@ -115,14 +116,63 @@
          ">This clade has the same path as another clade. This ambiguity may prevent the converter from selecting a unique clade for a given input.</s:report>-->
       </s:rule>
     </s:pattern>
+    <s:pattern id="at-most-one-default-clade-in-given-context">
+      <s:rule context="tr:clade[@default]">
+        <s:let name="sister-clades" value="following-sibling::tr:clade"/>
+        <s:report test="exists($sister-clades[@default])">At most one clade may be specified as the default clade in a given context.</s:report>
+      </s:rule>
+    </s:pattern>
     <element name="clade">
       <attribute name="role"/>
       <attribute name="name"/>
       <ref name="content-base-uri"/>
+
       <optional>
+        <attribute name="default">
+          <a:documentation>When a clade should be the default but you don’t want the parsed filename to contain a string 
+          that selects the clade, you can use this attribute on the clade. You need to make sure in your importing paths.xsl
+          that you overwrite not only the function tr:parse-file-name(), but also the global variable $parse-file-name.
+      
+          Consider this conf snippet:
+<![CDATA[<clade role="production-line" name="D7">
+  <clade name="07" role="edition" default="true">
+    <content role="article" name-regex="^D7-.+"/>
+  </clade>
+  <clade name="06" role="edition">
+    <content role="article" name-regex="^D7-.+"/>
+  </clade>
+</clade>]]>
+          Suppose that parsing a file name D7-edition07-stuff.xml leads to the attributes production-line="D7",
+          edition="07". Since 07 is the default (currently developed) edition, you don’t want each filename to include this
+          edition string. You want D7-stuff.xml to parse as the same attributes production-line="D7", edition="07".
+          You then write a more liberal regex that will match production-line and article, and if the production line has
+          a default edition, this edition will be included in the parsing result as if it had been present in the file name.
+          
+          You can achieve this by overriding the global variable $parse-file-name:
+  <![CDATA[<xsl:variable name="parse-file-name" as="attribute(*)*">
+    <xsl:variable name="prelim-parse-file-name" as="attribute(*)*" select="tr:parse-file-name($file)"/>
+    <xsl:variable name="production-line" as="xs:string?" select="$prelim-parse-file-name[name() = 'production-line']"/>
+    <xsl:variable name="default-edition-clade" 
+      select="//tr:clade[@role = 'production-line'][@name = $production-line]
+                  /tr:clade[@role = 'edition'][@default = 'true']"/>
+    <xsl:if test="exists($production-line)
+                  and empty($prelim-parse-file-name[name() = 'edition'])
+                  and exists($default-edition-clade)">
+      <xsl:attribute name="edition" select="string($default-edition-clade/@name)"/>
+    </xsl:if>
+    <xsl:sequence select="$prelim-parse-file-name"/>
+  </xsl:variable>]]>
+          </a:documentation>
+          <value>true</value>
+        </attribute>
+      </optional>
+      
+      <optional>
+        <!-- What is this attribute for? It is at least referred to in paths.xsl. -->
         <attribute name="file-name-component"/>
       </optional>
       <optional>
+        <!-- What is this attribute for? Is it used anywhere? -->
         <attribute name="filesystem-path-component"/>
       </optional>
       <zeroOrMore>
