@@ -44,8 +44,6 @@
     <xsl:param name="include-parsed-tokens-in-param-set" as="xs:boolean" select="false()"/>
     <xsl:param name="filename" as="xs:string?" select="$filename"/>
 
-    <xsl:param name="debug" as="xs:boolean?"/>
-
     <xsl:variable name="_filename" as="xs:string" select="if ($filename) then $filename else string(.)" />
     <xsl:variable name="result" as="map(*)"
       select="transform(map{
