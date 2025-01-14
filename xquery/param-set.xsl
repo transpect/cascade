@@ -24,6 +24,7 @@
   <xsl:param name="filename" as="xs:string?">
     <!-- Only needed for invocation by named template -->
   </xsl:param>
+  <xsl:param name="debug" as="xs:string?" select="'yes'"/>
   
   <xsl:variable name="transpect-conf" as="document-node(element(tr:conf))" 
     select="doc('http://this.transpect.io/conf/transpect-conf.xml')"/>
@@ -42,7 +43,7 @@
   <xsl:template match="c:file/@name" name="params-for-filename">
     <xsl:param name="include-parsed-tokens-in-param-set" as="xs:boolean" select="false()"/>
     <xsl:param name="filename" as="xs:string?" select="$filename"/>
-    <xsl:param name="debug" as="xs:boolean"/>
+    <xsl:param name="debug" as="xs:string?"/>
     <xsl:variable name="_filename" as="xs:string" select="if ($filename) then $filename else string(.)" />
     <xsl:variable name="result" as="map(*)"
       select="transform(map{
@@ -54,7 +55,7 @@
                                                     xs:QName('all-atts-as-params'): $include-parsed-tokens-in-param-set
                                                   }
                           })"/>
-    <xsl:if test="$debug">
+    <xsl:if test="$debug = 'yes'">
       <xsl:message select="'cascade/1_prequalify-matching-clades.xml', 
                            map:keys($result)[ends-with(., 'cascade/1_prequalify-matching-clades.xml')] ! map:get($result, .)"/>
     </xsl:if>
