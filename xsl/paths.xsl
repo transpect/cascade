@@ -547,7 +547,7 @@
 
   <xsl:template name="tr:other-params">
     <!-- Disable XSLT-based debugging (whether XProc-based debugging takes place is determined by the XProc debug option, not by a param): -->
-    <c:param name="debug" value="'no'"/>
+    <c:param name="debug" value="{$debug}"/>
     <c:param name="debug-dir-uri" value="{$debug-dir-uri}"/>
     <c:param name="status-dir-uri" value="{$status-dir-uri}"/>
     <c:param name="srcpaths" value="yes"/>
