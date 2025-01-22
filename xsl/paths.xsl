@@ -545,9 +545,9 @@
     <xsl:sequence select="$ext"/>
   </xsl:function>
 
-  <xsl:template name="tr:other-params">
+  <xsl:variable name="tr:other-params" as="element(c:param)+">
     <!-- Disable XSLT-based debugging (whether XProc-based debugging takes place is determined by the XProc debug option, not by a param): -->
-    <c:param name="debug" value="{$debug}"/>
+    <c:param name="debug" value="'no'"/>
     <c:param name="debug-dir-uri" value="{$debug-dir-uri}"/>
     <c:param name="status-dir-uri" value="{$status-dir-uri}"/>
     <c:param name="pipeline" value="{$pipeline}"/>
@@ -577,10 +577,15 @@
     <xsl:if test="$all-atts-as-params">
       <xsl:apply-templates select="$all-atts" mode="att-to-param"/>
     </xsl:if>
-  </xsl:template>
+  </xsl:variable>
   
   <xsl:template match="@*" mode="att-to-param">
     <c:param name="{name()}" value="{string(.)}"/>
+  </xsl:template>
+
+  <!-- overwrite the named template in your optional project 'paths.xsl' if necessary -->
+  <xsl:template name="tr:other-params">
+    <xsl:sequence select="$tr:other-params"/>
   </xsl:template>
 
 </xsl:stylesheet>
