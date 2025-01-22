@@ -550,7 +550,6 @@
     <c:param name="debug" value="{$debug}"/>
     <c:param name="debug-dir-uri" value="{$debug-dir-uri}"/>
     <c:param name="status-dir-uri" value="{$status-dir-uri}"/>
-    <c:param name="srcpaths" value="yes"/>
     <c:param name="pipeline" value="{$pipeline}"/>
     <c:param name="_params-given-in-clades-string" value="{tr:diagnostic-string($parse-clades-string)}"/>
     <c:param name="_params-given" value="{tr:diagnostic-string($all-atts)}"/>
