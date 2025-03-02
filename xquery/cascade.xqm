@@ -5,6 +5,9 @@ module namespace cascade = "http://transpect.io/cascade";
 declare namespace c = "http://www.w3.org/ns/xproc-step";
 declare namespace jats = "http://jats.nlm.nih.gov";
 
+declare variable $cascade:message as function(xs:string) as empty-sequence() :=
+  (function-lookup(xs:QName('fn:message'), 1), function-lookup(xs:QName('prof:dump'), 1))[1];
+
 declare function cascade:load-cascaded-xml($param-set as element(c:param-set), $relative-path) as document-node()? {
   let $paths as element(c:param) := $param-set/c:param[matches(@name, '^s9y\d')],
       $sorted as element(c:param) := sort($paths, (), function($param) { $param/@name})
@@ -46,7 +49,7 @@ declare function cascade:ensure-versionability(
   let $params-for-filename := 
         try {cascade:params-for-filename($filename) }
         catch cascade:ERR-params-01 { 
-          prof:dump($err:value),
+          $cascade:message($err:value),
           error($err:code, $err:description)
         },
       $repo-url as xs:string := string($params-for-filename/c:param[@name='content-repo-location']/@value),
@@ -82,7 +85,7 @@ declare function cascade:ensure-versionability-multi-article (
     cascade:ensure-external-exists($ms-parent-dir, $ms-external-url, $ms-external-mountpoint, $svnauth, $fire),
     let $missing-ms-wc-dirs as xs:string* := cascade:update-svn-wc($ms-wc-subdir, $svnauth, (), $fire)
     return (if (exists($missing-ms-wc-dirs))
-            then prof:dump('Missing MS subdirs: ' || string-join($missing-ms-wc-dirs, ', ')) else (),
+            then $cascade:message('Missing MS subdirs: ' || string-join($missing-ms-wc-dirs, ', ')) else (),
             for $d in $missing-ms-wc-dirs
             return cascade:svn-mkdir-if-inexistent($d, $svnauth, true(), $fire)),
     cascade:lock-copy-add-commit-file($params-for-filename, $svnauth, $helper-functions, $fire)
@@ -109,7 +112,7 @@ declare function cascade:ensure-versionability-work (
     cascade:ensure-external-exists($ms-parent-dir, $ms-external-url, $ms-external-mountpoint, $svnauth, $fire),
     let $missing-ms-wc-dirs as xs:string* := cascade:update-svn-wc($ms-wc-subdir, $svnauth, (), $fire)
     return (if (exists($missing-ms-wc-dirs))
-            then prof:dump('Missing MS subdirs: ' || string-join($missing-ms-wc-dirs, ', ')) else (),
+            then $cascade:message('Missing MS subdirs: ' || string-join($missing-ms-wc-dirs, ', ')) else (),
             for $d in $missing-ms-wc-dirs
             return cascade:svn-mkdir-if-inexistent($d, $svnauth, true(), $fire)),
     cascade:lock-copy-add-commit-file($params-for-filename, $svnauth, $helper-functions, $fire)
@@ -133,7 +136,7 @@ declare function cascade:lock-copy-add-commit-file (
     try {
       cascade:svn-add($target-file-name)
     } catch * {
-      prof:dump('Cannot freshly add ' || $target-file-name || '. Maybe already versioned.')
+      $cascade:message('Cannot freshly add ' || $target-file-name || '. Maybe already versioned.')
     },
     cascade:svn-commit($target-file-name, $svnauth, 'lock-copy-add-commit-file autocommit')
   )
@@ -147,7 +150,7 @@ declare function cascade:subdir-from-params (
       $filename as xs:string := ($dest-path => tokenize('/'))[normalize-space()][last()],
       $subdir as xs:string := $dest-path => substring-after($ms-dir) => substring-before($filename)
    return (
-     prof:dump('Subdir determined as ' || $subdir),
+     $cascade:message('Subdir determined as ' || $subdir),
      $subdir
    )
 };
@@ -168,7 +171,7 @@ declare function cascade:ensure-external-exists (
              $svnauth,
              $fire
            ),
-           prof:dump('Update ' || $wc-path),
+           $cascade:message('Update ' || $wc-path),
            cascade:update-svn-wc($wc-path, $svnauth, (), false())
          )
 };
@@ -186,7 +189,7 @@ declare function cascade:merge-svn-externals (
                    ! (string-join((@url, @rev), '@') || ' ' || @mount),
                  '&#xa;'
                )
-  return (prof:dump('Setting externals to ' || $prop || ' on ' || $dir),
+  return ($cascade:message('Setting externals to ' || $prop || ' on ' || $dir),
   cascade:svn-propset('svn:externals', $prop, $dir, $svnauth, $fire))
 };
 
@@ -222,7 +225,7 @@ declare function cascade:update-svn-wc (
     $fire as xs:boolean
   ) as xs:string* {
   (: returns the missing intermediate dirs in the order that they need to be created :)
-  prof:dump('cascade:update-svn-wc(): Trying ' || $dir),
+  $cascade:message('cascade:update-svn-wc(): Trying ' || $dir),
   if (not(file:exists($dir)))
   then let $parent as xs:string? := file:parent($dir)
        return if ($parent)
@@ -232,9 +235,9 @@ declare function cascade:update-svn-wc (
     try {
       let $svn-info as element(*) := cascade:svn-info($dir, $svnauth)
       return (
-        prof:dump('  got it: ' || serialize($svn-info)),
-        prof:dump('  trying to update ' || $dir),
-        for $u in cascade:svn-update($dir, $svnauth) return prof:dump('  updated: ' || string($u)),
+        $cascade:message('  got it: ' || serialize($svn-info)),
+        $cascade:message('  trying to update ' || $dir),
+        for $u in cascade:svn-update($dir, $svnauth) return $cascade:message('  updated: ' || string($u)),
         $svn-mkdirs-todo
       )
     }
@@ -244,7 +247,7 @@ declare function cascade:update-svn-wc (
          the top directory that needs to be committed :)
       if (not($fire))
       then (
-             prof:dump('Ignored since $fire is false: ' || $err:description),
+             $cascade:message('Ignored since $fire is false: ' || $err:description),
              $svn-mkdirs-todo
            )
       else error($err:code, $err:description, $err:value)
@@ -261,22 +264,22 @@ declare function cascade:svn-mkdir-if-inexistent(
   return
   if (not(file:exists($path)))
   then (
-         prof:dump('cascade:svn-mkdir-if-inexistent: ' || $path || ' inexistent'),
+         $cascade:message('cascade:svn-mkdir-if-inexistent: ' || $path || ' inexistent'),
          try { cascade:svn-info($path, $svnauth) }
-         catch cascade:ERR-svn-info-01 { (prof:dump('  need to create it'),
+         catch cascade:ERR-svn-info-01 { ($cascade:message('  need to create it'),
                                            cascade:svn-mkdir($path, $svnauth, 'created by svn-mkdir-if-inexistent in cascade.xqm'[not($is-wc)]),
                                      if ($fire and $is-wc) 
-                                     then (prof:dump('  and commit it.'),
+                                     then ($cascade:message('  and commit it.'),
                                            cascade:svn-commit($path, $svnauth, 'svn-mkdir-if-inexistent autocommit')) ) 
                                 }
       )
   else (
-         prof:dump('cascade:svn-mkdir-if-inexistent: ' || $path || ' exists but is not versioned yet'),
+         $cascade:message('cascade:svn-mkdir-if-inexistent: ' || $path || ' exists but is not versioned yet'),
          try { cascade:svn-info($path, $svnauth) }
-         catch cascade:ERR-svn-info-01 { (prof:dump('  need to add it'),
+         catch cascade:ERR-svn-info-01 { ($cascade:message('  need to add it'),
                                            cascade:svn-add(file:path-to-native($path)),
                                            if ($fire and $is-wc) 
-                                           then (prof:dump('  and to commit it.'),
+                                           then ($cascade:message('  and to commit it.'),
                                                  cascade:svn-commit($path, $svnauth, 'added by svn-mkdir-if-inexistent in cascade.xqm')) ) 
                                   }
        )
@@ -310,10 +313,10 @@ declare function cascade:svn-add($dir-or-file as xs:string) {
 
 declare function cascade:try-svn-lock($file as xs:string) {
   try {
-    prof:dump('Trying to get an svn lock for ' || $file),
+    $cascade:message('Trying to get an svn lock for ' || $file),
     proc:execute('svn', ('lock', $file))  
   } catch * {
-    prof:dump('Can’t get the lock')
+    $cascade:message('Can’t get the lock')
   } 
 };
 
@@ -358,7 +361,7 @@ declare function cascade:svn-propset(
   return if ($result/code = '0')
          then (
                 if ($fire)
-                then (prof:dump('committing the properties of ' || $path),
+                then ($cascade:message('committing the properties of ' || $path),
                       cascade:svn-commit($path, $svnauth, 'add/merge external autocommit')
                      ),
                 cascade:svn-propget($propname, $path, $svnauth)
@@ -385,7 +388,7 @@ declare function cascade:scan-svn-simple-auth($realmstring-regex) as map(xs:stri
   let $authdir := proc:property('user.home') || '/.subversion/auth/svn.simple/',
       $auth-files := file:list($authdir)[matches(., '^[0-9a-z]+$')]
   return (
-            (:prof:dump('Auth files: ' || string-join($auth-files, ', ')),:)
+            (:$cascade:message('Auth files: ' || string-join($auth-files, ', ')),:)
             for $file in $auth-files
             let $content := file:read-text($authdir || $file)
             return cascade:parse-svn-simple-auth($content)[matches(?realmstring, $realmstring-regex)]
