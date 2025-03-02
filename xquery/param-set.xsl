@@ -42,7 +42,7 @@
   </xsl:template>
   
   <xsl:template match="c:file/@name" name="params-for-filename">
-    <xsl:param name="include-parsed-tokens-in-param-set" as="xs:boolean" select="false()"/>
+    <xsl:param name="include-parsed-tokens-in-param-set" as="xs:boolean" select="true()"/>
     <xsl:param name="filename" as="xs:string?" select="$filename"/>
     <xsl:param name="debug" as="xs:boolean?" select="$debug-bool"/>
 
