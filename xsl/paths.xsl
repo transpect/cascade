@@ -86,6 +86,8 @@
 
   <xsl:output indent="yes"/>
 
+  <xsl:variable name="tr:conf" select="/tr:conf"/>
+
   <xsl:variable name="tr:conf-content-base-uri" select="/tr:conf/@content-base-uri"/>
 
   <xsl:variable name="tr:adaptations-path" as="xs:string" 
