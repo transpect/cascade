@@ -66,6 +66,7 @@
   <p:import href="http://transpect.io/xproc-util/store-debug/xpl/store-debug.xpl" />
   <p:import href="http://transpect.io/xproc-util/simple-progress-msg/xpl/simple-progress-msg.xpl"/>
 	<p:import href="http://transpect.io/xproc-util/file-uri/xpl/file-uri.xpl"/>
+  <p:import href="http://transpect.io/xproc-util/remove-ns-decl-and-xml-base/xpl/remove-ns-decl-and-xml-base.xpl"/>
   
   <p:variable name="stylesheet-base-uri" select="base-uri(/*)">
     <p:pipe port="stylesheet" step="paths"/>
@@ -192,6 +193,8 @@
           <p:pipe port="secondary" step="xslt"/>
         </p:iteration-source>
         
+        <tr:remove-ns-decl-and-xml-base/>
+        
         <tr:store-debug>
           <p:with-option name="pipeline-step" select="replace(base-uri(), '^.+/(cascade/.+)\.xml$', '$1')"/>
           <p:with-option name="active" select="$debug"/>
@@ -232,6 +235,8 @@
     </p:catch>
     
   </p:try>
+  
+  <tr:remove-ns-decl-and-xml-base/>
   
   <tr:store-debug pipeline-step="cascade/paths">
     <p:with-option name="active" select="$debug" />
