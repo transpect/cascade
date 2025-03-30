@@ -3,13 +3,19 @@
   xmlns:xs="http://www.w3.org/2001/XMLSchema"
   xmlns:tr="http://transpect.io"
   xmlns:c="http://www.w3.org/ns/xproc-step"
-  xmlns:map="http://www.w3.org/2005/xpath-functions/map"  
-  exclude-result-prefixes="xs tr map"
+  xmlns:map="http://www.w3.org/2005/xpath-functions/map"
+  xmlns:cascade="http://transpect.io/cascade"  
+  exclude-result-prefixes="xs tr map cascade"
   version="3.0">
   
   <!-- Invocation either by submitting a c:filenames document (see below) as input and processing it in default mode
        (this kind of invocation is necessitated by the JAXP interface that BaseX still uses)
-       or by supplying the filename parameter and calling the initial template 'params-for-filename'. -->
+       or by supplying the filename parameter and calling the initial template 'params-for-filename'. 
+       A third way is to call the result-caching function cascade:params-for-filename($fn). Calling it
+       instead of the named template will probably speed things up when multiple invocations for the
+       same filename occure. We particularly hope that filename parsing will only be performed once
+       in the XSLT that is invoked from Oxygen’s cc_config.xml.
+  -->
   
   <xsl:param name="collection-uri" as="xs:string" select="'http://transpect.io/cascade/xquery/collection.catalog.xml'">
     <!-- Historically, paths.xsl refers to the default collection in order to find an optional collection()/c:param-set 
@@ -63,5 +69,15 @@
     </xsl:if>
     <xsl:sequence select="$result?output"/>
   </xsl:template>
+  
+  <xsl:function name="cascade:params-for-filename" as="document-node(element(c:param-set))?" cache="yes">
+    <xsl:param name="fn-or-uri" as="xs:string">
+      <!-- hierarchical URIs or Unix paths that end in a filename are permitted -->
+    </xsl:param>
+    <xsl:call-template name="params-for-filename">
+      <xsl:with-param name="filename" select="$fn-or-uri"/>
+      <xsl:with-param name="debug" select="false()"/>
+    </xsl:call-template>
+  </xsl:function>
   
 </xsl:stylesheet>
