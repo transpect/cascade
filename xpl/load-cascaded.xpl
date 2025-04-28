@@ -27,7 +27,7 @@
     <p:option name="fallback" required="false" select="''"/>
     <p:option name="set-xml-base-attribute" required="false" select="'yes'"/>
     <p:option name="debug" required="false" select="'no'"/>
-    <p:option name="debug-dir-uri" />
+    <p:option name="debug-dir-uri" select="'debug'"/>
 
     <p:input port="paths" kind="parameter" primary="true"/>
     <p:input port="source" primary="true" sequence="true">
@@ -104,7 +104,7 @@
     <p:option name="fallback" required="false" select="''"/>
     <p:option name="result-with-file-prefix" required="false" select="'no'"/>
     <p:option name="debug" required="false" select="'no'"/>
-    <p:option name="debug-dir-uri" />
+    <p:option name="debug-dir-uri" select="'debug'"/>
 
     <p:input port="paths" kind="parameter" primary="true"/>
     <p:output port="result" primary="true"/>
