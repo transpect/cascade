@@ -50,6 +50,7 @@
   <xsl:template match="c:file/@name" name="params-for-filename">
     <xsl:param name="include-parsed-tokens-in-param-set" as="xs:boolean" select="true()"/>
     <xsl:param name="filename" as="xs:string?" select="$filename"/>
+    <xsl:param name="content-base-uri" as="xs:string?"/>
     <xsl:param name="debug" as="xs:boolean?" select="$debug-bool"/>
 
     <xsl:variable name="_filename" as="xs:string" select="if ($filename) then $filename else string(.)" />
@@ -60,7 +61,8 @@
                           'stylesheet-params': map{
                                                     xs:QName('collection-uri'): $collection-uri,
                                                     xs:QName('file'): $_filename,
-                                                    xs:QName('all-atts-as-params'): $include-parsed-tokens-in-param-set
+                                                    xs:QName('all-atts-as-params'): $include-parsed-tokens-in-param-set,
+                                                    xs:QName('content-base-uri'): $content-base-uri
                                                   }
                           })"/>
     <xsl:if test="$debug">
