@@ -82,7 +82,11 @@
   <xsl:param name="pipeline" as="xs:string?"/><!-- of declarative use only; will probably not be used when processing the content -->
   <xsl:param name="progress" as="xs:string?"/>
   <xsl:param name="progress-to-stdout" as="xs:string?"/>
-  <xsl:param name="all-atts-as-params" as="xs:boolean" select="false()"/>
+  <xsl:param name="all-atts-as-params" as="xs:boolean" select="true()">
+    <!-- If true, all attributes that clades / filename parsing generate will be included in the resulting param-set.
+         There is no obvious reason why it shouldn’t be true. When it was introduced, it was set to false in order
+         to avoid differences in tests. -->
+  </xsl:param>
 
   <xsl:output indent="yes"/>
 
