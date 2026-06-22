@@ -1,4 +1,4 @@
-Copyright (c) 2015–2024, transpect.io
+Copyright (c) 2015–2026, transpect.io
 
 All rights reserved.
 
